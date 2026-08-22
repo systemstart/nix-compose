@@ -6,10 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 While the major version is 0, the `nix-compose.yaml` schema and the CLI
-surface may change between minor releases. Releases are tagged as
-pre-releases until that stops.
+surface may change between minor releases.
 
-## Unreleased
+## v0.1.0 — 2026-08-22
+
+First public release.
 
 ### Added
 

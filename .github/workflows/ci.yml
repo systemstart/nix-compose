@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Every job pulls from and pushes to the shared `systemstart` Cachix cache, so
+# a derivation built once is not rebuilt anywhere — including across repos.
+# nix-compose takes nix-oci as a flake input, so nix-oci's CI builds land here
+# for free. That is also why there is no separate GitHub Actions store cache:
+# Cachix plus cache.nixos.org already covers it, without spending the repo's
+# Actions cache quota on a multi-gigabyte store.
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/nix-installer-action@v22
+        with:
+          determinate: false
+          diagnostic-endpoint: ''
+      - uses: cachix/cachix-action@v17
+        with:
+          name: systemstart
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
+      - run: nix develop --command make lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/nix-installer-action@v22
+        with:
+          determinate: false
+          diagnostic-endpoint: ''
+      - uses: cachix/cachix-action@v17
+        with:
+          name: systemstart
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
+      # `make test` enforces its own coverage threshold and writes coverage.out.
+      - run: nix develop --command make test
+      - uses: codecov/codecov-action@v7
+        with:
+          files: coverage.out
+          token: ${{ secrets.CODECOV_TOKEN }}
+        continue-on-error: true
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/nix-installer-action@v22
+        with:
+          determinate: false
+          diagnostic-endpoint: ''
+      - uses: cachix/cachix-action@v17
+        with:
+          name: systemstart
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
+      - run: nix develop --command make build
+      # `nix build` covers the documented install path. `nix flake check` is
+      # deliberately absent: it evaluates the microVM NixOS configurations as
+      # standalone bootable systems and fails on assertions that do not apply
+      # to a direct-kernel guest. See ROADMAP.md.
+      - run: nix build --no-link
+
+  # Integration tests need a CRI socket, which a stock GitHub runner does not
+  # have — see docs/running-in-ci.md. They run against a real runtime locally.
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [lint, test, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # goreleaser builds its changelog from history
+      - uses: DeterminateSystems/nix-installer-action@v22
+        with:
+          determinate: false
+          diagnostic-endpoint: ''
+      - uses: cachix/cachix-action@v17
+        with:
+          name: systemstart
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
+      - run: nix develop --command make release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: "dist/nix-compose_*"

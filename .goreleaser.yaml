@@ -33,6 +33,7 @@ release:
   github:
     owner: systemstart
     name: nix-compose
-  # Public beta: every release is a pre-release until the API and the YAML
-  # format are settled. Remove once that is no longer true.
+  # "auto" marks a release as a pre-release only when the tag carries a
+  # semver pre-release identifier (v0.2.0-rc1). A plain v0.1.0 is a full
+  # release; tag an -rc if you want otherwise.
   prerelease: auto

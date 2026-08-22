@@ -3,15 +3,55 @@
   "extends": [
     "config:recommended"
   ],
+  "schedule": [
+    "before 9am on monday"
+  ],
+  "nix": {
+    "enabled": true
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": [
+      "before 7am on monday"
+    ]
+  },
   "packageRules": [
     {
-      "matchManagers": ["gomod"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true
+      "matchManagers": [
+        "gomod"
+      ],
+      "commitMessagePrefix": "fix(deps):"
     },
     {
-      "matchManagers": ["nix"],
-      "groupName": "nix flake inputs"
+      "matchManagers": [
+        "github-actions"
+      ],
+      "commitMessagePrefix": "ci(deps):"
+    },
+    {
+      "matchManagers": [
+        "nix"
+      ],
+      "commitMessagePrefix": "chore(deps):"
+    },
+    {
+      "matchManagers": [
+        "nix"
+      ],
+      "matchPackageNames": [
+        "nixpkgs"
+      ],
+      "commitMessageExtra": "({{{newVersion}}})"
+    },
+    {
+      "matchManagers": [
+        "nix"
+      ],
+      "matchPackageNames": [
+        "nix-oci"
+      ],
+      "commitMessagePrefix": "chore(deps):",
+      "commitMessageExtra": "({{{newVersion}}})"
     }
   ]
 }

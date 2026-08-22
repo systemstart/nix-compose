@@ -5,10 +5,9 @@ Evaluate Nix service definitions and orchestrate containers.
 Write your services in a `nix-compose.yaml` or in Nix, and manage the full
 lifecycle with familiar commands.
 
-> **Status: public beta.** It works, and it is used daily against real
-> projects — but the `nix-compose.yaml` schema and the CLI surface may still
-> change before 1.0, and releases are tagged as pre-releases until they
-> stop. Read [docs/limitations.md](docs/limitations.md) before adopting it
+> **Status: 0.x.** It works, and it is used daily against real projects —
+> but the `nix-compose.yaml` schema and the CLI surface may still change
+> before 1.0. Read [docs/limitations.md](docs/limitations.md) before adopting it
 > for anything load-bearing; it is a deliberately complete account of what
 > does not work, not a marketing document.
 >
