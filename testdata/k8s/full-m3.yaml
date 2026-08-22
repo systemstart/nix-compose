@@ -1,0 +1,192 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: api-secrets
+    namespace: default
+    labels:
+        app.kubernetes.io/managed-by: nix-compose
+        app.kubernetes.io/name: api
+stringData:
+    API_KEY: secret123
+    DATABASE_URL: postgres://db:5432/app
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+    name: db-data
+    namespace: default
+    labels:
+        app.kubernetes.io/managed-by: nix-compose
+spec:
+    accessModes:
+        - ReadWriteOnce
+    resources:
+        requests:
+            storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: api
+    namespace: default
+    labels:
+        app.kubernetes.io/managed-by: nix-compose
+        app.kubernetes.io/name: api
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app.kubernetes.io/name: api
+    template:
+        metadata:
+            name: ""
+            labels:
+                app.kubernetes.io/managed-by: nix-compose
+                app.kubernetes.io/name: api
+        spec:
+            initContainers:
+                - name: migrate
+                  image: flyway:latest
+                  command:
+                    - flyway
+                    - migrate
+                  env:
+                    - name: DB_URL
+                      value: postgres://db:5432/app
+            containers:
+                - name: api
+                  image: node:18
+                  ports:
+                    - name: http
+                      containerPort: 3000
+                  env:
+                    - name: NODE_ENV
+                      value: production
+                  envFrom:
+                    - secretRef:
+                        name: api-secrets
+                  resources:
+                    limits:
+                        cpu: "1.0"
+                        memory: 512M
+                    requests:
+                        cpu: "0.25"
+                        memory: 128M
+                  livenessProbe:
+                    httpGet:
+                        path: /healthz
+                        port: 3000
+                    initialDelaySeconds: 10
+                    periodSeconds: 30
+                    timeoutSeconds: 5
+                    failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: api
+    namespace: default
+    labels:
+        app.kubernetes.io/managed-by: nix-compose
+        app.kubernetes.io/name: api
+spec:
+    selector:
+        app.kubernetes.io/name: api
+    ports:
+        - name: http
+          port: 3000
+          targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: db
+    namespace: default
+    labels:
+        app.kubernetes.io/managed-by: nix-compose
+        app.kubernetes.io/name: db
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app.kubernetes.io/name: db
+    template:
+        metadata:
+            name: ""
+            labels:
+                app.kubernetes.io/managed-by: nix-compose
+                app.kubernetes.io/name: db
+        spec:
+            containers:
+                - name: db
+                  image: postgres:15
+                  ports:
+                    - containerPort: 5432
+                  env:
+                    - name: POSTGRES_DB
+                      value: app
+                  volumeMounts:
+                    - name: db-data
+                      mountPath: /var/lib/postgresql/data
+            volumes:
+                - name: db-data
+                  persistentVolumeClaim:
+                    claimName: db-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: db
+    namespace: default
+    labels:
+        app.kubernetes.io/managed-by: nix-compose
+        app.kubernetes.io/name: db
+spec:
+    selector:
+        app.kubernetes.io/name: db
+    ports:
+        - port: 5432
+          targetPort: "5432"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: web
+    namespace: default
+    labels:
+        app.kubernetes.io/managed-by: nix-compose
+        app.kubernetes.io/name: web
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app.kubernetes.io/name: web
+    template:
+        metadata:
+            name: ""
+            labels:
+                app.kubernetes.io/managed-by: nix-compose
+                app.kubernetes.io/name: web
+        spec:
+            containers:
+                - name: web
+                  image: nginx:latest
+                  ports:
+                    - name: http
+                      containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: web
+    namespace: default
+    labels:
+        app.kubernetes.io/managed-by: nix-compose
+        app.kubernetes.io/name: web
+spec:
+    selector:
+        app.kubernetes.io/name: web
+    ports:
+        - name: http
+          port: 80
+          targetPort: http

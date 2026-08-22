@@ -1,0 +1,37 @@
+# A nix-compose project with no Nix file in sight.
+#
+# `package:` is the reason this is not just another compose runner: the image
+# for that service is built from the package's closure and handed straight to
+# containerd. Nothing is pulled, nothing is pushed, and there is no Dockerfile.
+#
+#   nix-compose up
+#   nix-compose ps
+#   nix-compose images     # note the nix-compose.local/ references
+#   nix-compose down
+#
+# The nixpkgs those packages come from is the one nix-compose was built
+# against, so package versions travel with the nix-compose version. Pin your
+# own by uncommenting:
+#
+# nixpkgs: github:NixOS/nixpkgs/nixos-unstable
+
+services:
+  # Built from a Nix closure. `meta.mainProgram` says which binary to run, so
+  # no entrypoint is needed here.
+  greeter:
+    package: hello
+
+  # Same idea, but this one stays up so `nix-compose ps` has something to show.
+  # coreutils ships many binaries and names no main program, so `entrypoint`
+  # picks one. A bare command name is resolved against the package itself —
+  # there is no PATH inside an image built from a closure.
+  ticker:
+    package: coreutils
+    entrypoint: ["sleep", "3600"]
+
+  # Registry images still work, and mix freely with the ones above — which is
+  # what makes migrating an existing project one service at a time possible.
+  cache:
+    image: redis:7-alpine
+    restart: unless-stopped
+    depends_on: [ticker]

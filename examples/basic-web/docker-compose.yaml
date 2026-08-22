@@ -1,0 +1,16 @@
+## Original docker-compose.yaml (before migration)
+##
+## This is the standard Docker Compose file you'd start with.
+## To migrate to nix-compose, create a flake.nix alongside it
+## and run `nix-compose up` instead of `docker compose up`.
+
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+    environment:
+      NGINX_HOST: localhost
+    restart: unless-stopped

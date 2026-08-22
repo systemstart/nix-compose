@@ -1,0 +1,86 @@
+{
+  "services": {
+    "web": {
+      "image": "nginx:latest",
+      "ports": ["8080:80"],
+      "depends_on": {
+        "api": {"condition": "service_healthy"}
+      },
+      "x-nix-compose": {
+        "namedPorts": [
+          {
+            "name": "http",
+            "containerPort": 80,
+            "hostPort": 8080
+          }
+        ]
+      }
+    },
+    "api": {
+      "image": "node:18",
+      "ports": ["3000:3000"],
+      "environment": {"NODE_ENV": "production"},
+      "depends_on": {
+        "db": {"condition": "service_healthy"}
+      },
+      "x-nix-compose": {
+        "resources": {
+          "limits": {
+            "cpu": "1.0",
+            "memory": "512M"
+          },
+          "requests": {
+            "cpu": "0.25",
+            "memory": "128M"
+          }
+        },
+        "probes": {
+          "liveness": {
+            "httpGet": {
+              "path": "/healthz",
+              "port": 3000
+            },
+            "initialDelaySeconds": 10,
+            "periodSeconds": 30,
+            "timeoutSeconds": 5,
+            "failureThreshold": 3
+          }
+        },
+        "namedPorts": [
+          {
+            "name": "http",
+            "containerPort": 3000,
+            "hostPort": 3000
+          }
+        ],
+        "envFrom": [
+          {
+            "secretFile": "secrets/api.env"
+          }
+        ],
+        "initContainers": [
+          {
+            "name": "migrate",
+            "image": "flyway:latest",
+            "command": ["flyway", "migrate"],
+            "environment": {"DB_URL": "postgres://db:5432/app"}
+          }
+        ]
+      }
+    },
+    "db": {
+      "image": "postgres:15",
+      "ports": ["5432:5432"],
+      "environment": {"POSTGRES_DB": "app"},
+      "healthcheck": {
+        "test": ["CMD", "pg_isready"],
+        "interval": "5s",
+        "retries": 3
+      },
+      "volumes": ["db-data:/var/lib/postgresql/data"]
+    }
+  },
+  "volumes": {
+    "db-data": {}
+  }
+}

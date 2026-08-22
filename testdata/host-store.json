@@ -1,0 +1,18 @@
+{
+  "services": {
+    "app": {
+      "image": "app:latest",
+      "command": ["./run"],
+      "x-nix-compose": {
+        "useHostStore": true,
+        "nixStorePaths": [
+          "/nix/store/abc123-myapp",
+          "/nix/store/def456-libfoo"
+        ],
+        "serviceInfo": {
+          "defaultExec": ["bash"]
+        }
+      }
+    }
+  }
+}

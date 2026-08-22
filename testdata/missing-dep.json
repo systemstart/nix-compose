@@ -1,0 +1,12 @@
+{
+  "services": {
+    "web": {
+      "image": "nginx:latest",
+      "depends_on": {
+        "nonexistent": {
+          "condition": "service_started"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+error: … while calling the 'import' builtin
+       at /nix/store/abc123-source/compose.nix:5:3:
+            4|
+            5|   imports = [
+             |   ^
+            6|     ./service-web.nix
+
+       … while evaluating the attribute 'config.out.dockerComposeYamlAttrs'
+
+       error: attribute 'missingPackage' missing
+       at /home/user/project/compose.nix:12:15:
+           11|     image.enableRecommendedContents = true;
+           12|     service.image = pkgs.missingPackage;
+              |               ^
+           13|   };

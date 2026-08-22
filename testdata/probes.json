@@ -1,0 +1,28 @@
+{
+  "services": {
+    "api": {
+      "image": "node:18",
+      "ports": ["3000:3000"],
+      "x-nix-compose": {
+        "probes": {
+          "liveness": {
+            "httpGet": {
+              "path": "/healthz",
+              "port": 3000
+            },
+            "initialDelaySeconds": 10,
+            "periodSeconds": 30,
+            "timeoutSeconds": 5,
+            "failureThreshold": 3
+          },
+          "readiness": {
+            "exec": {
+              "command": ["cat", "/tmp/ready"]
+            },
+            "periodSeconds": 10
+          }
+        }
+      }
+    }
+  }
+}

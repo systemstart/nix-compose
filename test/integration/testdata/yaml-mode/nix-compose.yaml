@@ -1,0 +1,12 @@
+# YAML mode with `package:` — the registry-free loop, declared without Nix.
+services:
+  # Stays up so `ps` has something to show. A bare entrypoint command is
+  # resolved against the package, since the image has no PATH.
+  sleeper:
+    package: coreutils
+    entrypoint: ["sleep", "infinity"]
+
+  # `package` alone: the entrypoint comes from meta.mainProgram. Exits
+  # immediately, so it is asserted through `images`.
+  greeter:
+    package: hello

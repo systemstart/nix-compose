@@ -1,0 +1,28 @@
+{
+  "services": {
+    "a": {
+      "image": "alpine",
+      "depends_on": {
+        "b": {
+          "condition": "service_started"
+        }
+      }
+    },
+    "b": {
+      "image": "alpine",
+      "depends_on": {
+        "c": {
+          "condition": "service_started"
+        }
+      }
+    },
+    "c": {
+      "image": "alpine",
+      "depends_on": {
+        "a": {
+          "condition": "service_started"
+        }
+      }
+    }
+  }
+}

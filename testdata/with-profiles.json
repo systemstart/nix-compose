@@ -1,0 +1,27 @@
+{
+  "services": {
+    "web": {
+      "image": "nginx:latest",
+      "ports": ["8080:80"],
+      "profiles": ["frontend"]
+    },
+    "api": {
+      "image": "node:20-slim",
+      "ports": ["3000:3000"],
+      "depends_on": {
+        "db": {
+          "condition": "service_healthy"
+        }
+      },
+      "profiles": ["backend"]
+    },
+    "db": {
+      "image": "postgres:16",
+      "ports": ["5432:5432"],
+      "profiles": ["backend"]
+    },
+    "worker": {
+      "image": "worker:latest"
+    }
+  }
+}

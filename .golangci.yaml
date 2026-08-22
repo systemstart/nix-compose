@@ -1,0 +1,38 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - dupl
+    - unused
+    - gosec
+    - wrapcheck
+    - cyclop
+  settings:
+    cyclop:
+      # 15, not the default 10. The functions that exceed 10 here are all
+      # parsers and converters — compose→YAML conversion, document validation,
+      # nix stderr parsing — where the branch count is the shape of the input
+      # format, not accidental complexity. Splitting them scatters one format's
+      # rules across several functions and reads worse.
+      #
+      # This is a ceiling to hold, not a target: nothing currently sits above
+      # 15, and a new function that needs more than that is worth a second look
+      # rather than another bump.
+      max-complexity: 15
+    gosec:
+      excludes:
+        - G122 # filesystem op in WalkDir callback — unavoidable for tree copy/overlay logic
+        - G204 # subprocess launched with variable — needed for kustomize/helm exec
+        - G301 # directory created with permissions > 0750 — acceptable for output dirs
+        - G304 # file path from variable — unavoidable for user-provided input/output paths
+        - G306 # file written with permissions > 0600 — output files need standard read perms
+        - G703 # path traversal via taint analysis — paths are validated at API boundary
+
+formatters:
+  enable:
+    - gofumpt

@@ -1,0 +1,19 @@
+{
+  "services": {
+    "api": {
+      "image": "node:18",
+      "environment": {"NODE_ENV": "production"},
+      "x-nix-compose": {
+        "envFrom": [
+          {
+            "secretFile": "secrets/api.env"
+          },
+          {
+            "secretFile": "secrets/api.env",
+            "prefix": "APP_"
+          }
+        ]
+      }
+    }
+  }
+}

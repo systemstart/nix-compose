@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: web
+    namespace: default
+    labels:
+        app.kubernetes.io/managed-by: nix-compose
+        app.kubernetes.io/name: web
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app.kubernetes.io/name: web
+    template:
+        metadata:
+            name: ""
+            labels:
+                app.kubernetes.io/managed-by: nix-compose
+                app.kubernetes.io/name: web
+        spec:
+            containers:
+                - name: web
+                  image: nginx:latest
+                  ports:
+                    - containerPort: 80
+                  env:
+                    - name: NGINX_HOST
+                      value: localhost
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: web
+    namespace: default
+    labels:
+        app.kubernetes.io/managed-by: nix-compose
+        app.kubernetes.io/name: web
+spec:
+    selector:
+        app.kubernetes.io/name: web
+    ports:
+        - port: 80
+          targetPort: "80"

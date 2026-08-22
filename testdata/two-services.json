@@ -1,0 +1,58 @@
+{
+  "services": {
+    "web": {
+      "image": "nginx:latest",
+      "ports": ["8080:80"],
+      "environment": {
+        "NGINX_HOST": "localhost",
+        "BACKEND_URL": "http://api:3000"
+      },
+      "depends_on": {
+        "api": {
+          "condition": "service_healthy"
+        }
+      },
+      "volumes": [
+        "./html:/usr/share/nginx/html:ro"
+      ],
+      "x-nix-compose": {
+        "serviceInfo": {
+          "defaultExec": ["bash"]
+        }
+      }
+    },
+    "api": {
+      "image": "node:20-slim",
+      "command": ["node", "server.js"],
+      "ports": ["3000:3000"],
+      "environment": {
+        "NODE_ENV": "production",
+        "DB_HOST": "localhost"
+      },
+      "healthcheck": {
+        "test": ["CMD", "curl", "-f", "http://localhost:3000/health"],
+        "interval": "10s",
+        "timeout": "5s",
+        "retries": 3,
+        "start_period": "30s"
+      },
+      "volumes": [
+        "api-data:/data",
+        "./config:/app/config:ro"
+      ],
+      "x-nix-compose": {
+        "serviceInfo": {
+          "defaultExec": ["sh", "-c", "node"]
+        }
+      }
+    }
+  },
+  "networks": {
+    "default": {
+      "name": "two-services_default"
+    }
+  },
+  "volumes": {
+    "api-data": {}
+  }
+}

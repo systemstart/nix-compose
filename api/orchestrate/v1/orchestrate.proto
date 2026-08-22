@@ -1,0 +1,163 @@
+syntax = "proto3";
+package orchestrate.v1;
+option go_package = "github.com/systemstart/nix-compose/api/orchestrate/v1;orchestratev1";
+
+import "google/protobuf/timestamp.proto";
+
+service OrchestrateService {
+  rpc Plan(PlanRequest) returns (PlanResponse);
+  rpc Apply(ApplyRequest) returns (ApplyResponse);
+  rpc Teardown(TeardownRequest) returns (TeardownResponse);
+  rpc State(StateRequest) returns (StateResponse);
+  rpc Health(HealthRequest) returns (HealthResponse);
+  rpc ExecSync(ExecSyncRequest) returns (ExecSyncResponse);
+  rpc Logs(LogsRequest) returns (stream LogEntry);
+  rpc Drift(DriftRequest) returns (DriftResponse);
+  rpc Rollback(RollbackRequest) returns (RollbackResponse);
+}
+
+// PlanRequest asks the server to compute a plan from the given composition.
+message PlanRequest {
+  bytes composition_json = 1;
+  string project = 2;
+  bool use_cni = 3;
+}
+
+// Action describes a single planned change.
+message Action {
+  string type = 1;       // "create", "update", "destroy", "noop"
+  string resource_id = 2;
+  string kind = 3;
+  string reason = 4;
+}
+
+// PlanResponse returns the computed plan.
+message PlanResponse {
+  repeated Action actions = 1;
+  int32 creates = 2;
+  int32 updates = 3;
+  int32 destroys = 4;
+  int32 noops = 5;
+}
+
+// ApplyRequest asks the server to plan and apply in one shot.
+message ApplyRequest {
+  bytes composition_json = 1;
+  string project = 2;
+  bool use_cni = 3;
+}
+
+// ApplyResponse returns the result of the apply.
+message ApplyResponse {
+  repeated Action actions = 1;
+  int32 creates = 2;
+  int32 updates = 3;
+  int32 destroys = 4;
+  int32 noops = 5;
+}
+
+// TeardownRequest asks the server to tear down services.
+message TeardownRequest {
+  string project = 1;
+  int32 timeout = 2;
+  bool remove_volumes = 3;
+  bytes composition_json = 4;
+}
+
+// TeardownResponse is empty on success.
+message TeardownResponse {}
+
+// StateRequest queries the current rollout state.
+message StateRequest {
+  string project = 1;
+}
+
+// RolloutInfo describes a single resource rollout.
+message RolloutInfo {
+  string instance_id = 1;
+  string instance_key = 2;
+  string status = 3;
+  bytes body = 4;
+}
+
+// StateResponse returns all current rollouts.
+message StateResponse {
+  repeated RolloutInfo rollouts = 1;
+}
+
+// HealthRequest checks server and runtime health.
+message HealthRequest {}
+
+// HealthResponse returns health status.
+message HealthResponse {
+  bool healthy = 1;
+  string runtime_name = 2;
+  string runtime_version = 3;
+}
+
+// ExecSyncRequest runs a command synchronously in a service container.
+message ExecSyncRequest {
+  string project = 1;
+  string service = 2;
+  repeated string cmd = 3;
+  int64 timeout = 4;
+}
+
+// ExecSyncResponse returns exec output.
+message ExecSyncResponse {
+  bytes stdout = 1;
+  bytes stderr = 2;
+  int32 exit_code = 3;
+}
+
+// LogsRequest subscribes to service logs.
+message LogsRequest {
+  string project = 1;
+  repeated string services = 2;
+  bool follow = 3;
+  bool timestamps = 4;
+  string tail = 5;
+  string since = 6;
+}
+
+// LogEntry is a single log line from a service.
+message LogEntry {
+  string service = 1;
+  google.protobuf.Timestamp timestamp = 2;
+  string stream = 3;
+  string message = 4;
+}
+
+// DriftRequest asks the server to check for drift.
+message DriftRequest {
+  string project = 1;
+}
+
+// DriftItem describes a single drifted resource.
+message DriftItem {
+  string resource_id = 1;
+  string kind = 2;
+  string expected = 3;
+  string actual = 4;
+  string reason = 5;
+}
+
+// DriftResponse returns all drifted resources.
+message DriftResponse {
+  repeated DriftItem items = 1;
+}
+
+// RollbackRequest asks the server to rollback to a previous deployment.
+message RollbackRequest {
+  string deployment_id = 1;
+  bool dry_run = 2;
+}
+
+// RollbackResponse returns the result of a rollback.
+message RollbackResponse {
+  repeated Action actions = 1;
+  int32 creates = 2;
+  int32 updates = 3;
+  int32 destroys = 4;
+  int32 noops = 5;
+}

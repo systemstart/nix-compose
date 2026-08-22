@@ -1,0 +1,23 @@
+version = 2
+root = "/tmp/ctrd-root"
+state = "/tmp/ctrd"
+
+[grpc]
+  address = "/tmp/ctrd/containerd.sock"
+
+[ttrpc]
+  address = "/tmp/ctrd/containerd.sock.ttrpc"
+
+[plugins."io.containerd.nri.v1.nri"]
+  disable = true
+
+[plugins."io.containerd.grpc.v1.cri"]
+  disable_apparmor = true
+  restrict_oom_score_adj = true
+  [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+    runtime_type = "io.containerd.runc.v2"
+    [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+      Root = "/tmp/ctrd/runc"
+  [plugins."io.containerd.grpc.v1.cri".cni]
+    conf_dir = "/tmp/ctrd-cni"
+    bin_dir = "@CNI_BIN_DIR@"

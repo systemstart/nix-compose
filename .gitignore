@@ -1,0 +1,21 @@
+.envrc
+.direnv
+.idea/
+.nix-compose/
+coverage.out
+.go/
+/nix-compose
+dist/
+*.cov
+
+# Local scratch and build residue that must never reach a release
+.cni-bin/
+ci-vm-image
+result
+result-*
+*.bak
+CONTINUE.md
+VERIFICATION.md
+
+# Generated from containerd-rootless.toml — contains machine-specific paths
+.containerd-rootless.toml

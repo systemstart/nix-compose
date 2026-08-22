@@ -1,0 +1,43 @@
+{
+  "services": {
+    "api": {
+      "image": "node:18",
+      "x-nix-compose": {
+        "namedPorts": [
+          {
+            "name": "http",
+            "containerPort": 3000,
+            "hostPort": 8080
+          },
+          {
+            "name": "metrics",
+            "containerPort": 9090,
+            "hostPort": 9090,
+            "protocol": "tcp"
+          },
+          {
+            "name": "dns",
+            "containerPort": 53,
+            "hostPort": 5353,
+            "protocol": "udp"
+          },
+          {
+            "name": "debug",
+            "containerPort": 9229
+          },
+          {
+            "name": "admin",
+            "containerPort": 8081,
+            "hostPort": 8081,
+            "hostIP": "127.0.0.1"
+          },
+          {
+            "name": "internal",
+            "containerPort": 8082,
+            "hostIP": "127.0.0.1"
+          }
+        ]
+      }
+    }
+  }
+}

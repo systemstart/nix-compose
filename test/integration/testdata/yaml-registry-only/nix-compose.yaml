@@ -1,0 +1,5 @@
+# No `package:` anywhere, so this project never invokes nix at all.
+services:
+  web:
+    image: nginx:alpine
+    command: ["sleep", "infinity"]

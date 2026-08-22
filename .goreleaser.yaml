@@ -1,0 +1,38 @@
+version: 2
+
+builds:
+  - main: ./cmd/nix-compose
+    binary: nix-compose
+    ldflags:
+      - -X main.version={{ .Version }}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - formats: ['tar.gz']
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^ci:'
+      - '^chore:'
+
+release:
+  github:
+    owner: systemstart
+    name: nix-compose
+  # Public beta: every release is a pre-release until the API and the YAML
+  # format are settled. Remove once that is no longer true.
+  prerelease: auto

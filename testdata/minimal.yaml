@@ -1,0 +1,14 @@
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    environment:
+      NGINX_HOST: localhost
+    x-nix-compose:
+      serviceInfo:
+        defaultExec:
+          - bash
+networks:
+  default:
+    name: minimal_default
