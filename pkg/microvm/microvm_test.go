@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/systemstart/nix-compose/internal/testsock"
+
 	orchestratev1 "github.com/systemstart/nix-compose/api/orchestrate/v1"
 	"github.com/systemstart/nix-compose/pkg/orchestrate/client"
 	"google.golang.org/grpc"
@@ -739,7 +741,7 @@ func TestWaitForHealth_DialSucceedsAndHealthy(t *testing.T) {
 	cfg := validConfig(t)
 	v := newVM(cfg)
 
-	sock := filepath.Join(t.TempDir(), "orch.sock")
+	sock := testsock.Path(t, "orch.sock")
 
 	lis, err := net.Listen("unix", sock)
 	if err != nil {

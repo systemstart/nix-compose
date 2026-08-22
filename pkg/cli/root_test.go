@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/systemstart/nix-compose/internal/testsock"
+
 	orchestratev1 "github.com/systemstart/nix-compose/api/orchestrate/v1"
 	"github.com/systemstart/nix-compose/pkg/cni"
 	"github.com/systemstart/nix-compose/pkg/cri"
@@ -486,7 +488,7 @@ func (m *cliMockCRI) PodSandboxStatus(_ context.Context, req *runtimev1.PodSandb
 func startCLIMockCRI(t *testing.T) (string, *cliMockCRI) {
 	t.Helper()
 	mock := newCLIMockCRI()
-	sock := filepath.Join(t.TempDir(), "cri.sock")
+	sock := testsock.Path(t, "cri.sock")
 	lis, err := net.Listen("unix", sock)
 	if err != nil {
 		t.Fatalf("listen: %v", err)
@@ -5894,7 +5896,7 @@ func startCLIOrchestrateServer(t *testing.T) string {
 	}
 	t.Cleanup(func() { _ = criClient.Close() })
 
-	orchSock := filepath.Join(t.TempDir(), "orch.sock")
+	orchSock := testsock.Path(t, "orch.sock")
 
 	// Lazy import through indirect init — we need the server package.
 	// Build server config with test-scoped paths.

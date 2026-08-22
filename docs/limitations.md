@@ -155,6 +155,20 @@ wants anyway. For real data, put the volume somewhere on a local
 filesystem and reference it as an explicit bind mount rather than using a
 named volume.
 
+### Unix socket paths are limited to 108 bytes
+
+Not a nix-compose limitation so much as one it runs into: a unix socket path
+is copied into `sockaddr_un.sun_path`, a fixed 108-byte buffer on Linux
+(104 on macOS). Exceeding it fails `bind(2)` with `EINVAL`, which Go reports
+as `bind: invalid argument` — a message that says nothing about length.
+
+This bites tests rather than users: `t.TempDir()` builds its path from
+`TMPDIR`, the full test name and a counter, so a long `TMPDIR` (`nix
+develop` sets one) plus a long test name can breach the limit. The symptom
+is that a few tests fail on one machine and not another, with an error that
+looks like a permissions problem. `internal/testsock.Path` exists for this:
+use it instead of `t.TempDir()` for anything that will be bound.
+
 ### `logs` cannot read a rootful runtime's log files
 
 nix-compose reads container logs straight off disk, from

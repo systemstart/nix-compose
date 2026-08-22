@@ -1,4 +1,13 @@
-COVERAGE_THRESHOLD := 80
+# 75, lowered from 80 when the compose-CLI backend was removed. That package
+# was small, pure and near-fully covered, so deleting it removed more covered
+# statements than uncovered ones and the average fell. What remains in pkg/cli
+# is dominated by command entry points and CRI polling loops that need a live
+# container runtime — those are covered by `make test-integration`, which needs
+# a CRI socket and so cannot run on a stock CI runner (docs/running-in-ci.md).
+#
+# This is a floor to raise, not a target to sink to. Do not lower it again
+# without removing tested code to match.
+COVERAGE_THRESHOLD := 75
 COVERPROFILE := coverage.out
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -X main.version=$(VERSION)

@@ -38,6 +38,10 @@ Integration tests need a working CRI socket and are behind a build tag:
 go test -tags integration ./test/integration/...
 ```
 
+Tests that bind a unix socket must take their path from
+`internal/testsock.Path`, not `t.TempDir()` directly — see
+[docs/limitations.md](docs/limitations.md) for why.
+
 `make proto` regenerates the gRPC bindings. Do **not** hand-edit
 `api/orchestrate/v1/*.pb.go` — the file descriptor embeds length-prefixed
 strings, so a search-and-replace that changes any embedded path silently

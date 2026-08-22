@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/systemstart/nix-compose/internal/testsock"
+
 	"google.golang.org/grpc"
 	runtimev1 "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
@@ -33,7 +35,7 @@ func (m *mockRuntimeService) Version(_ context.Context, _ *runtimev1.VersionRequ
 func startMockCRI(t *testing.T, name, version string) string {
 	t.Helper()
 
-	sock := filepath.Join(t.TempDir(), "cri.sock")
+	sock := testsock.Path(t, "cri.sock")
 	lis, err := net.Listen("unix", sock)
 	if err != nil {
 		t.Fatalf("listen: %v", err)
@@ -201,7 +203,7 @@ func TestDetectWithEmptyPaths(t *testing.T) {
 // call and fails if the server doesn't implement RuntimeService.
 func TestDialVerifiesConnection(t *testing.T) {
 	// Start a bare gRPC server with no services registered.
-	sock := filepath.Join(t.TempDir(), "bare.sock")
+	sock := testsock.Path(t, "bare.sock")
 	lis, err := net.Listen("unix", sock)
 	if err != nil {
 		t.Fatalf("listen: %v", err)

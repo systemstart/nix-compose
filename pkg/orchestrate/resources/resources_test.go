@@ -11,6 +11,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/systemstart/nix-compose/internal/testsock"
+
 	"github.com/systemstart/nix-compose/pkg/cni"
 	"github.com/systemstart/nix-compose/pkg/cri"
 	"github.com/systemstart/nix-compose/pkg/orchestrate/typing"
@@ -1399,7 +1401,7 @@ func resourceMatchLabels(podLabels, selector map[string]string) bool {
 // the socket path and the mock instance (for state manipulation).
 func startResourceMockCRI(t *testing.T) (string, *resourceMockCRI) {
 	t.Helper()
-	sock := filepath.Join(t.TempDir(), "cri.sock")
+	sock := testsock.Path(t, "cri.sock")
 	lis, err := net.Listen("unix", sock)
 	if err != nil {
 		t.Fatalf("listen: %v", err)

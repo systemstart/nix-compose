@@ -5,6 +5,8 @@ import (
 	"net"
 	"testing"
 
+	"github.com/systemstart/nix-compose/internal/testsock"
+
 	orchestratev1 "github.com/systemstart/nix-compose/api/orchestrate/v1"
 	"github.com/systemstart/nix-compose/pkg/cni"
 	"github.com/systemstart/nix-compose/pkg/cri"
@@ -27,7 +29,7 @@ func TestDialerWiring(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = criClient.Close() })
 
-	sock := t.TempDir() + "/dialer-test.sock"
+	sock := testsock.Path(t, "dialer-test.sock")
 	lis, err := net.Listen("unix", sock)
 	if err != nil {
 		t.Fatalf("listen: %v", err)

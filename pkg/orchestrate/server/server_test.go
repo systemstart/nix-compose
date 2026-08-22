@@ -10,6 +10,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/systemstart/nix-compose/internal/testsock"
+
 	orchestratev1 "github.com/systemstart/nix-compose/api/orchestrate/v1"
 	"github.com/systemstart/nix-compose/pkg/cni"
 	"github.com/systemstart/nix-compose/pkg/cri"
@@ -178,7 +180,7 @@ func matchLabels(podLabels, selector map[string]string) bool {
 // startMockCRI starts a gRPC CRI mock on a unix socket and returns the socket path.
 func startMockCRI(t *testing.T) string {
 	t.Helper()
-	sock := filepath.Join(t.TempDir(), "cri.sock")
+	sock := testsock.Path(t, "cri.sock")
 	lis, err := net.Listen("unix", sock)
 	if err != nil {
 		t.Fatalf("listen: %v", err)
@@ -213,7 +215,7 @@ func setupTestEnv(t *testing.T) *testEnv {
 	t.Cleanup(func() { _ = criClient.Close() })
 
 	// Create orchestrate server on its own socket.
-	orchSock := filepath.Join(t.TempDir(), "orch.sock")
+	orchSock := testsock.Path(t, "orch.sock")
 	volStore := &volumes.Store{Root: t.TempDir()}
 	cniStore := &cni.Store{
 		ConfDir:    t.TempDir(),
@@ -1422,7 +1424,7 @@ func TestGracefulStop(t *testing.T) {
 	srv := New(Config{
 		DBPath: filepath.Join(t.TempDir(), "state.bolt"),
 	})
-	lis, err := net.Listen("unix", filepath.Join(t.TempDir(), "test.sock"))
+	lis, err := net.Listen("unix", testsock.Path(t, "test.sock"))
 	if err != nil {
 		t.Fatalf("listen: %v", err)
 	}

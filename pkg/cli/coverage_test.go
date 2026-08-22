@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/systemstart/nix-compose/internal/testsock"
+
 	"github.com/systemstart/nix-compose/pkg/cni"
 	"github.com/systemstart/nix-compose/pkg/cri"
 	"github.com/systemstart/nix-compose/pkg/orchestrate/server"
@@ -615,7 +617,7 @@ func TestRunExec_CRIPath(t *testing.T) {
 func startCoverageMockCRI(t *testing.T) (string, *cliMockCRI) {
 	t.Helper()
 	mock := newCLIMockCRI()
-	sock := filepath.Join(t.TempDir(), "cri.sock")
+	sock := testsock.Path(t, "cri.sock")
 	lis, err := net.Listen("unix", sock)
 	if err != nil {
 		t.Fatalf("listen: %v", err)
@@ -639,7 +641,7 @@ func startCoverageOrchestrateWithData(t *testing.T) string {
 	}
 	t.Cleanup(func() { _ = criClient.Close() })
 
-	orchSock := filepath.Join(t.TempDir(), "orch.sock")
+	orchSock := testsock.Path(t, "orch.sock")
 
 	volStore := &volumes.Store{Root: t.TempDir()}
 	cniStore := &cni.Store{

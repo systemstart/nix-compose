@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"path/filepath"
 	"testing"
+
+	"github.com/systemstart/nix-compose/internal/testsock"
 
 	"github.com/systemstart/nix-compose/pkg/eval"
 	"google.golang.org/grpc"
@@ -49,7 +50,7 @@ func (m *cgroupMockCRI) RunPodSandbox(_ context.Context, req *runtimev1.RunPodSa
 
 func startCgroupMock(t *testing.T, mock *cgroupMockCRI) *Client {
 	t.Helper()
-	sock := filepath.Join(t.TempDir(), "cri.sock")
+	sock := testsock.Path(t, "cri.sock")
 	lis, err := net.Listen("unix", sock)
 	if err != nil {
 		t.Fatalf("listen: %v", err)

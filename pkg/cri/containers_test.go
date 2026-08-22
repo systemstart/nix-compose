@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"path/filepath"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/systemstart/nix-compose/internal/testsock"
 
 	"google.golang.org/grpc"
 	runtimev1 "k8s.io/cri-api/pkg/apis/runtime/v1"
@@ -284,7 +285,7 @@ func matchLabels(target, selector map[string]string) bool {
 func startFullMockCRI(t *testing.T) (string, *fullMockCRI) {
 	t.Helper()
 	mock := newFullMockCRI()
-	sock := filepath.Join(t.TempDir(), "cri.sock")
+	sock := testsock.Path(t, "cri.sock")
 	lis, err := net.Listen("unix", sock)
 	if err != nil {
 		t.Fatalf("listen: %v", err)
