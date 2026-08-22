@@ -22,6 +22,17 @@ checksum:
 
 changelog:
   sort: asc
+  # Short SHAs; the default prints all 40 characters, which drowns the subject.
+  abbrev: 7
+  groups:
+    - title: Features
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: Fixes
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: Other changes
+      order: 999
   filters:
     exclude:
       - '^docs:'
@@ -37,3 +48,45 @@ release:
   # semver pre-release identifier (v0.2.0-rc1). A plain v0.1.0 is a full
   # release; tag an -rc if you want otherwise.
   prerelease: auto
+  # The commit list below is close to useless on its own — it says what
+  # changed, never what the thing is. Anyone arriving at a release page from
+  # a search result sees this first, so it has to stand alone.
+  header: |
+    Container orchestration over CRI, with service images built straight from
+    Nix closures instead of Dockerfiles.
+
+    `nix-compose` speaks CRI gRPC directly to containerd or CRI-O — no daemon,
+    no compose file, nothing shelling out to another tool. A service can name a
+    *package* instead of a registry image, and its image is built from that
+    package's Nix closure and imported into the runtime: no Dockerfile, nothing
+    pushed or pulled.
+
+    ## Install
+
+    ```sh
+    nix run github:systemstart/nix-compose -- up -d
+    # or
+    go install github.com/systemstart/nix-compose/cmd/nix-compose@latest
+    ```
+
+    Or download an archive below. Linux only; needs containerd or CRI-O.
+    Run `nix-compose doctor` first — it checks every prerequisite and each
+    finding carries its fix.
+
+    ## What is in this release
+
+    See [CHANGELOG.md](https://github.com/systemstart/nix-compose/blob/main/CHANGELOG.md)
+    for the full account, and
+    [docs/limitations.md](https://github.com/systemstart/nix-compose/blob/main/docs/limitations.md)
+    for what does not work — that one is deliberately complete, not a
+    marketing document. Read it before adopting this for anything
+    load-bearing.
+  footer: |
+
+    ---
+
+    While the major version is 0, the `nix-compose.yaml` schema and the CLI
+    surface may still change between minor releases.
+
+    Archives are attested with build provenance; verify with
+    `gh attestation verify <archive> --repo systemstart/nix-compose`.
