@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Pre-commit: run `make lint` for nix-compose.
+#
+# Enabled via core.hooksPath, which the devShell shellHook sets. By hand:
+#   git config core.hooksPath .githooks
+#
+# Bypass one commit:
+#   SKIP_LINT=1 git commit ...
+# (`git commit --no-verify` also works, but skips every hook rather than this
+# one, so prefer SKIP_LINT when the point is just "I know, lint is red".)
+set -euo pipefail
+
+if [ "${SKIP_LINT:-}" = "1" ]; then
+    echo "pre-commit: SKIP_LINT=1 — skipping make lint"
+    exit 0
+fi
+
+cd "$(git rev-parse --show-toplevel)"
+
+# Fast path when already inside `nix develop`: the tools are on PATH and this
+# costs only the lint itself. Otherwise wrap, which pays a flake evaluation on
+# every commit — correct, but noticeably slower.
+if command -v golangci-lint >/dev/null 2>&1; then
+    make lint
+else
+    echo "pre-commit: not in nix develop — wrapping make lint (slower)…"
+    nix develop --quiet --command make lint
+fi

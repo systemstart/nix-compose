@@ -96,5 +96,11 @@ pkgs.mkShell {
     ln -sf ${pkgs.dnsname-cni}/bin/* "$CNI_BIN_DIR/"
     sed "s|@CNI_BIN_DIR@|$CNI_BIN_DIR|" containerd-rootless.toml > "$PWD/.containerd-rootless.toml"
     export CONTAINERD_CONFIG="$PWD/.containerd-rootless.toml"
+
+    # Enable .githooks/pre-commit (runs `make lint`). Opt out per commit with
+    # SKIP_LINT=1.
+    if [ -d .git ] && [ -f .githooks/pre-commit ]; then
+      git config core.hooksPath .githooks 2>/dev/null || true
+    fi
   '';
 }

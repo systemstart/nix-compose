@@ -38,6 +38,17 @@ Integration tests need a working CRI socket and are behind a build tag:
 go test -tags integration ./test/integration/...
 ```
 
+A pre-commit hook runs `make lint` before every commit. `nix develop` enables
+it by pointing `core.hooksPath` at `.githooks/`; to enable it by hand:
+
+```sh
+git config core.hooksPath .githooks
+```
+
+Bypass a single commit with `SKIP_LINT=1 git commit …` when you know lint is
+red and are committing anyway. Prefer that over `--no-verify`, which skips
+every hook rather than this one.
+
 Tests that bind a unix socket must take their path from
 `internal/testsock.Path`, not `t.TempDir()` directly — see
 [docs/limitations.md](docs/limitations.md) for why.
