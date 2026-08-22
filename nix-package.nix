@@ -5,7 +5,7 @@ buildGo126Module {
   version = rev;
   src = lib.cleanSource ./.;
 
-  vendorHash = "sha256-4/qQSPDhk5mOvwH2eduO9LdQWypEkR5l2Rb5piV8yNk=";
+  vendorHash = "sha256-cd2vMnPe7+WbhWOLS9ZYVseBQG6wPlp/yrVswxBkMMI=";
 
   # buildGoModule now sets CGO_ENABLED inside `env`, and nixpkgs rejects the
   # same name appearing in both `env` and the derivation arguments.

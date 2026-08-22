@@ -15,6 +15,15 @@
       "before 7am on monday"
     ]
   },
+  "postUpgradeTasks": {
+    "commands": [
+      "scripts/sync-nixpins.sh"
+    ],
+    "fileFilters": [
+      "pkg/nixpins/pins.go"
+    ],
+    "executionMode": "branch"
+  },
   "packageRules": [
     {
       "matchManagers": [

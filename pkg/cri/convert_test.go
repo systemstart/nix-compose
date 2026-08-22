@@ -150,7 +150,9 @@ func TestEnvsToKeyValues(t *testing.T) {
 		if len(kvs) != 1 {
 			t.Fatalf("expected 1, got %d", len(kvs))
 		}
-		if kvs[0].Key != "FOO" || kvs[0].Value != "bar" {
+		// Value is []byte, not string: cri-api changed the field type in
+		// v0.36.3. Comparing as a string keeps the assertion readable.
+		if kvs[0].Key != "FOO" || string(kvs[0].Value) != "bar" {
 			t.Errorf("got %s=%s, want FOO=bar", kvs[0].Key, kvs[0].Value)
 		}
 	})
@@ -361,7 +363,7 @@ func TestBuildContainerConfig_WorkdirAndEnv(t *testing.T) {
 	if cfg.WorkingDir != "/app" {
 		t.Errorf("WorkingDir = %q, want /app", cfg.WorkingDir)
 	}
-	if len(cfg.Envs) != 1 || cfg.Envs[0].Key != "ENV" || cfg.Envs[0].Value != "prod" {
+	if len(cfg.Envs) != 1 || cfg.Envs[0].Key != "ENV" || string(cfg.Envs[0].Value) != "prod" {
 		t.Errorf("Envs = %v, want [{ENV prod}]", cfg.Envs)
 	}
 }

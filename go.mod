@@ -1,20 +1,21 @@
 module github.com/systemstart/nix-compose
 
-go 1.26.3
+go 1.26.5
 
 require (
-	github.com/containerd/containerd/v2 v2.3.3
-	github.com/containerd/platforms v1.0.0-rc.4
+	github.com/containerd/containerd/v2 v2.3.4
+	github.com/containerd/platforms v1.0.0-rc.5
 	github.com/google/uuid v1.6.0
 	github.com/mdlayher/vsock v1.3.0
 	github.com/moby/spdystream v0.5.1
+	github.com/opencontainers/image-spec v1.1.1
 	github.com/spf13/cobra v1.10.2
-	go.etcd.io/bbolt v1.4.3
-	golang.org/x/term v0.44.0
-	google.golang.org/grpc v1.81.1
-	google.golang.org/protobuf v1.36.12-0.20260120151049-f2248ac996af
+	go.etcd.io/bbolt v1.5.0
+	golang.org/x/term v0.45.0
+	google.golang.org/grpc v1.83.1
+	google.golang.org/protobuf v1.36.12
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/cri-api v0.36.1
+	k8s.io/cri-api v0.36.4
 )
 
 require (
@@ -47,20 +48,19 @@ require (
 	github.com/moby/sys/user v0.4.0 // indirect
 	github.com/moby/sys/userns v0.1.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/opencontainers/runtime-spec v1.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
-	github.com/spf13/pflag v1.0.9 // indirect
+	github.com/spf13/pflag v1.0.10 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.68.0 // indirect
-	go.opentelemetry.io/otel v1.43.0 // indirect
-	go.opentelemetry.io/otel/metric v1.43.0 // indirect
-	go.opentelemetry.io/otel/trace v1.43.0 // indirect
-	golang.org/x/net v0.55.0 // indirect
+	go.opentelemetry.io/otel v1.44.0 // indirect
+	go.opentelemetry.io/otel/metric v1.44.0 // indirect
+	go.opentelemetry.io/otel/trace v1.44.0 // indirect
+	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
-	golang.org/x/sys v0.46.0 // indirect
-	golang.org/x/text v0.38.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260406210006-6f92a3bedf2d // indirect
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/text v0.39.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa // indirect
 )

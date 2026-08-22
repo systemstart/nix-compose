@@ -12,7 +12,12 @@ COVERPROFILE := coverage.out
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -X main.version=$(VERSION)
 
-.PHONY: build test test-integration lint tag release release-tag release-tag-preview sign clean fmt proto containerd containerd-setup containerd-clean containerd-exec
+.PHONY: sync-nixpins build test test-integration lint tag release release-tag release-tag-preview sign clean fmt proto containerd containerd-setup containerd-clean containerd-exec
+
+# Rewrite pkg/nixpins/pins.go from flake.lock. Run after `nix flake update`;
+# Renovate runs it automatically via postUpgradeTasks in renovate.json.
+sync-nixpins:
+	@scripts/sync-nixpins.sh
 
 proto:
 	protoc --go_out=paths=source_relative:. --go-grpc_out=paths=source_relative:. \

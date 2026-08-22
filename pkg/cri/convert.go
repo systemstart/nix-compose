@@ -192,7 +192,7 @@ func EnvsToKeyValues(env map[string]string) []*runtimev1.KeyValue {
 	}
 	kvs := make([]*runtimev1.KeyValue, 0, len(env))
 	for k, v := range env {
-		kvs = append(kvs, &runtimev1.KeyValue{Key: k, Value: v})
+		kvs = append(kvs, &runtimev1.KeyValue{Key: k, Value: []byte(v)})
 	}
 	return kvs
 }

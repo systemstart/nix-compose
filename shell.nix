@@ -52,6 +52,16 @@ pkgs.mkShell {
   buildInputs = with pkgs; [
     gnumake
     goPkg
+    # Reading and checking the formats this project deals in: flake.lock and
+    # go.mod are JSON-ish, and everything the tool consumes or emits
+    # (nix-compose.yaml, `render --target k8s` output, the CI workflows) is YAML.
+    jq
+    yq-go
+    # The argument really is `buildGo126Module`, whatever Go we are on:
+    # that is the parameter name nixpkgs. golangci-lint package takes, and it
+    # pins its own builder deliberately. Overriding its `go` is what puts our
+    # toolchain (goPkg, derived from go.mod) underneath the linter, so it
+    # analyses code with the same compiler that builds it.
     (golangci-lint.override { buildGo126Module = buildGo126Module.override { go = goPkg; }; })
     goreleaser
     gsemver
