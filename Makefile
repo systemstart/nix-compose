@@ -12,7 +12,7 @@ COVERPROFILE := coverage.out
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -X main.version=$(VERSION)
 
-.PHONY: build test test-integration lint tag release clean proto containerd containerd-setup containerd-clean containerd-exec
+.PHONY: build test test-integration lint tag release release-tag release-tag-preview sign clean fmt proto containerd containerd-setup containerd-clean containerd-exec
 
 proto:
 	protoc --go_out=paths=source_relative:. --go-grpc_out=paths=source_relative:. \
@@ -77,8 +77,27 @@ containerd-clean:
 clean:
 	rm -f nix-compose $(COVERPROFILE)
 
+# Preview the version `release-tag` would cut, without touching anything.
+# gsemver derives it from the conventional-commit history since the last tag,
+# and it fetches, so this needs network access to the remote.
+release-tag-preview:
+	@v="$$(gsemver bump)"; \
+	test -n "$$v" || { echo "gsemver produced no version — is the remote reachable?" >&2; exit 1; }; \
+	printf "next tag: v%s\n" "$$v"
+
+# Cuts and pushes in one step — run release-tag-preview first if you want to
+# see the version before it is public. The tag is annotated, and
+# tag.forcesignannotated makes that a signed tag.
 release-tag:
 	$(eval VERSION := $(shell gsemver bump))
+	@test -n "$(VERSION)" || { \
+		echo "gsemver produced no version — refusing to tag." >&2; \
+		echo "make hides a failing command inside its shell function, and an empty" >&2; \
+		echo "version would tag and push a ref literally named v. Check the remote" >&2; \
+		echo "is reachable and gsemver is on PATH." >&2; \
+		exit 1; \
+	}
+	@printf "tagging v%s\n" "$(VERSION)"
 	git tag -a "v$(VERSION)" -m "Release v$(VERSION)"
 	git push origin "v$(VERSION)"
 
