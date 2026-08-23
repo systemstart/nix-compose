@@ -38,6 +38,19 @@ Integration tests need a working CRI socket and are behind a build tag:
 go test -tags integration ./test/integration/...
 ```
 
+## Releasing
+
+`make release-tag` derives the next version from the conventional-commit
+history (`gsemver`), tags it, and pushes. `make release-tag-preview` shows the
+version first without touching anything.
+
+The release notes are goreleaser's: it groups the commits since the last tag
+into the GitHub release body. `CHANGELOG.md` is hand-written and only covers
+releases worth a paragraph — it is not generated, and not every release needs
+an entry.
+
+## Pre-commit hook
+
 A pre-commit hook runs `make lint` before every commit. `nix develop` enables
 it by pointing `core.hooksPath` at `.githooks/`; to enable it by hand:
 

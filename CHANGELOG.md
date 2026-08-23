@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 While the major version is 0, the `nix-compose.yaml` schema and the CLI
 surface may change between minor releases.
 
+## v0.2.0 — 2026-08-22
+
+Maintenance release; no behaviour change. Minimum Go is now 1.26.5 (was
+1.26.3), which affects `go install` only. Dependency updates, notably
+`k8s.io/cri-api` 0.36.1 → 0.36.4 — a patch release that changed
+`KeyValue.Value` from `string` to `[]byte`, handled internally.
+
+See the [release page](https://github.com/systemstart/nix-compose/releases/tag/v0.2.0)
+for the commit list.
+
 ## v0.1.0 — 2026-08-22
 
 First public release.

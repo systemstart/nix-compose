@@ -33,12 +33,11 @@ changelog:
       order: 1
     - title: Other changes
       order: 999
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
-      - '^ci:'
-      - '^chore:'
+  # No exclude filters. They used to drop docs/test/ci/chore commits, which
+  # emptied the changelog entirely on a release that happened to contain only
+  # those — v0.2.0 shipped with a bare `## Changelog` heading and nothing under
+  # it. Grouping already keeps the noise out of the way: anything that is not a
+  # feat or a fix lands under "Other changes", where it is visible but last.
 
 release:
   github:
@@ -73,14 +72,11 @@ release:
     Run `nix-compose doctor` first — it checks every prerequisite and each
     finding carries its fix.
 
-    ## What is in this release
+    ## Before you adopt it
 
-    See [CHANGELOG.md](https://github.com/systemstart/nix-compose/blob/main/CHANGELOG.md)
-    for the full account, and
-    [docs/limitations.md](https://github.com/systemstart/nix-compose/blob/main/docs/limitations.md)
-    for what does not work — that one is deliberately complete, not a
-    marketing document. Read it before adopting this for anything
-    load-bearing.
+    Read [docs/limitations.md](https://github.com/systemstart/nix-compose/blob/main/docs/limitations.md)
+    — a deliberately complete account of what does not work, not a marketing
+    document. The changes in this release are listed below.
   footer: |
 
     ---

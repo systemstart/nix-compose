@@ -93,6 +93,10 @@ release-tag-preview:
 # Cuts and pushes in one step — run release-tag-preview first if you want to
 # see the version before it is public. The tag is annotated, and
 # tag.forcesignannotated makes that a signed tag.
+#
+# The release notes are goreleaser's job, not this target's: it groups the
+# commits since the last tag into the GitHub release body. CHANGELOG.md is
+# hand-written and only covers releases worth a paragraph.
 release-tag:
 	$(eval VERSION := $(shell gsemver bump))
 	@test -n "$(VERSION)" || { \
@@ -100,6 +104,10 @@ release-tag:
 		echo "make hides a failing command inside its shell function, and an empty" >&2; \
 		echo "version would tag and push a ref literally named v. Check the remote" >&2; \
 		echo "is reachable and gsemver is on PATH." >&2; \
+		exit 1; \
+	}
+	@git diff --quiet && git diff --cached --quiet || { \
+		echo "working tree is dirty — commit or stash before releasing." >&2; \
 		exit 1; \
 	}
 	@printf "tagging v%s\n" "$(VERSION)"
