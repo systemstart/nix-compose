@@ -19,7 +19,11 @@ let
     boot.initrd.systemd.enable = true;
 
     boot.initrd.availableKernelModules = [
-      "virtio_vsock"
+      # The virtio vsock guest driver. There is no module called
+      # "virtio_vsock": CONFIG_VIRTIO_VSOCKETS builds
+      # net/vmw_vsock/vmw_vsock_virtio_transport.ko, and modprobe pulls in
+      # vsock.ko and vmw_vsock_virtio_transport_common.ko behind it.
+      "vmw_vsock_virtio_transport"
       "virtiofs"
       "overlay"
       "virtio_blk"
@@ -27,7 +31,7 @@ let
     ];
 
     boot.kernelModules = [
-      "virtio_vsock"
+      "vmw_vsock_virtio_transport"
       "virtiofs"
       "overlay"
     ];
