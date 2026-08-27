@@ -96,6 +96,9 @@ let
       };
     };
 
+    # ── Boot loader (not needed — cloud-hypervisor boots kernel directly) ─
+    boot.loader.grub.enable = false;
+
     # ── Minimal system ────────────────────────────────────────────────
     documentation.enable = false;
     security.polkit.enable = false;
@@ -106,6 +109,10 @@ let
     networking.firewall.enable = false;
 
     users.mutableUsers = false;
+    # This is an appliance image: nothing logs in. It is driven entirely over
+    # vsock by the nix-compose-serve unit, and openssh is off, so there is no
+    # login path a password would guard.
+    users.allowNoPasswordLogin = true;
 
     system.stateVersion = "24.11";
   });
