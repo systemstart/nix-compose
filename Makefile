@@ -91,8 +91,10 @@ release-tag-preview:
 	printf "next tag: v%s\n" "$$v"
 
 # Cuts and pushes in one step — run release-tag-preview first if you want to
-# see the version before it is public. The tag is annotated, and
-# tag.forcesignannotated makes that a signed tag.
+# see the version before it is public. The tag is signed with `git tag -s`.
+# Note that tag.forcesignannotated does NOT achieve this: git gives an explicit
+# --annotate/-a precedence over that config, so `git tag -a` produces an
+# unsigned tag however the config is set.
 #
 # The computed version is also written to ./VERSION and committed as part of
 # the release, because that file is what nix-package.nix reads. Writing it here
@@ -115,11 +117,16 @@ release-tag:
 		echo "working tree is dirty — commit or stash before releasing." >&2; \
 		exit 1; \
 	}
+	@git config --get user.signingkey >/dev/null || { \
+		echo "user.signingkey is unset — the signed tag would fail after the" >&2; \
+		echo "release commit was already made, leaving a half-cut release." >&2; \
+		exit 1; \
+	}
 	@printf "tagging v%s\n" "$(VERSION)"
 	@printf '%s\n' "$(VERSION)" > VERSION
 	git add VERSION
 	git commit -m "chore: release v$(VERSION)" VERSION
-	git tag -a "v$(VERSION)" -m "Release v$(VERSION)"
+	git tag -s "v$(VERSION)" -m "Release v$(VERSION)"
 	git push origin HEAD "v$(VERSION)"
 
 sign:
