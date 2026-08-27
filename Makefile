@@ -94,6 +94,11 @@ release-tag-preview:
 # see the version before it is public. The tag is annotated, and
 # tag.forcesignannotated makes that a signed tag.
 #
+# The computed version is also written to ./VERSION and committed as part of
+# the release, because that file is what nix-package.nix reads. Writing it here
+# is what keeps the Nix package, the goreleaser artifact and the tag in
+# agreement.
+#
 # The release notes are goreleaser's job, not this target's: it groups the
 # commits since the last tag into the GitHub release body. CHANGELOG.md is
 # hand-written and only covers releases worth a paragraph.
@@ -111,8 +116,11 @@ release-tag:
 		exit 1; \
 	}
 	@printf "tagging v%s\n" "$(VERSION)"
+	@printf '%s\n' "$(VERSION)" > VERSION
+	git add VERSION
+	git commit -m "chore: release v$(VERSION)" VERSION
 	git tag -a "v$(VERSION)" -m "Release v$(VERSION)"
-	git push origin "v$(VERSION)"
+	git push origin HEAD "v$(VERSION)"
 
 sign:
 	@if [ -z "$(IMAGE)" ]; then echo "IMAGE is required"; exit 1; fi

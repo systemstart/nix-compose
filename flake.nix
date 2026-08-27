@@ -16,9 +16,7 @@
     let
       # Overlay is system-independent.
       overlayFn = final: prev: {
-        nix-compose = final.callPackage ./nix-package.nix {
-          rev = self.shortRev or "dev";
-        };
+        nix-compose = final.callPackage ./nix-package.nix { };
       };
     in
     {
