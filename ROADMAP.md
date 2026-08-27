@@ -66,7 +66,6 @@ These items are **not planned** but have come up as natural extensions.
 | Image builds | Optional buildkit integration for `build:` key | Current stance: build externally (Nix, CI) — see [ADR-006](docs/adrs/006-no-image-builds.md) |
 | CNI plugin bundling | Ship required CNI plugins as a Nix derivation in the flake | Currently users must install plugins separately |
 | virtiofsd overlay | Patch virtiofsd so a `setgroups` EPERM is non-fatal, and use it for `--microvm` | Single blocker shared by both VM-based paths: the standalone CI-VM runner and `--microvm` on a hardened CI runner. Highest-leverage item for CI support — see [docs/running-in-ci.md](docs/running-in-ci.md) |
-| `nix flake check` | Make it pass, so CI can gate on it | It currently fails: the microVM NixOS configurations are evaluated as standalone bootable systems and trip assertions (`boot.loader.grub.devices`, no root password) that do not apply to a direct-kernel guest. CI runs `nix build` instead |
 | CRI-O testing | Dedicated integration tests against CRI-O in standalone mode | containerd is the primary test target today |
 | Container events | Subscribe to CRI container events instead of polling `ContainerStatus` | Would reduce latency for health checks and watch mode |
 | TUI | Interactive operations over the dependency graph | Resource tree, deployment table, live log pane; would sit on top of the existing plan/state/drift commands |

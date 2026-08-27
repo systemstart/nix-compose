@@ -68,11 +68,15 @@ jobs:
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
       - run: nix develop --command make build
-      # `nix build` covers the documented install path. `nix flake check` is
-      # deliberately absent: it evaluates the microVM NixOS configurations as
-      # standalone bootable systems and fails on assertions that do not apply
-      # to a direct-kernel guest. See ROADMAP.md.
+      # `nix build` covers the documented install path.
       - run: nix build --no-link
+      - run: nix flake check
+      # `nix flake check` only *evaluates* `packages` outputs -- it builds
+      # `checks`, and there are none here. So the VM images are built
+      # explicitly: without this, a broken NixOS config (a kernel module that
+      # does not exist, say) reaches a release untouched by CI. They are
+      # Linux-only outputs, which this runner is.
+      - run: nix build --no-link .#microvm-image .#ci-vm-image
 
   # Integration tests need a CRI socket, which a stock GitHub runner does not
   # have — see docs/running-in-ci.md. They run against a real runtime locally.
