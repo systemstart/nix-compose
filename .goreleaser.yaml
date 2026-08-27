@@ -24,20 +24,37 @@ changelog:
   sort: asc
   # Short SHAs; the default prints all 40 characters, which drowns the subject.
   abbrev: 7
+  # goreleaser has no notion of a breaking change, so it is a group like any
+  # other, matched on the conventional-commit `!`. It sits first because a
+  # reader deciding whether to upgrade needs it before anything else.
+  #
+  # Note the changelog renders commit *subjects* only — never bodies. A
+  # BREAKING-CHANGE footer will not appear here, so the subject has to carry
+  # enough, and the specifics belong in `release.header` for that release.
   groups:
+    - title: Breaking changes
+      regexp: '^.*?[[:word:]]+(\([[:word:]]+\))?!:.+$'
+      order: 0
     - title: Features
       regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
-      order: 0
+      order: 1
     - title: Fixes
       regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
-      order: 1
+      order: 2
     - title: Other changes
       order: 999
-  # No exclude filters. They used to drop docs/test/ci/chore commits, which
-  # emptied the changelog entirely on a release that happened to contain only
-  # those — v0.2.0 shipped with a bare `## Changelog` heading and nothing under
-  # it. Grouping already keeps the noise out of the way: anything that is not a
-  # feat or a fix lands under "Other changes", where it is visible but last.
+  filters:
+    # Merge commits only. Type-based excludes (docs/test/ci/chore) are
+    # deliberately absent: they emptied the changelog entirely on a release that
+    # contained only those — v0.2.0 shipped with a bare `## Changelog` heading
+    # and nothing under it. Grouping keeps the noise out of the way instead:
+    # anything that is not breaking, a feat or a fix lands under "Other
+    # changes", where it is visible but last.
+    #
+    # This history is linear today, so the filter is inert; it is here so the
+    # two projects' release configs stay identical in shape.
+    exclude:
+      - "^Merge pull request"
 
 release:
   github:
