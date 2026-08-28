@@ -64,6 +64,9 @@ pkgs.mkShell {
     # analyses code with the same compiler that builds it.
     (golangci-lint.override { buildGo126Module = buildGo126Module.override { go = goPkg; }; })
     goreleaser
+    # Generates the release notes (cliff.toml) that `make release` hands to
+    # goreleaser via --release-notes.
+    git-cliff
     gsemver
     kustomize
     kubernetes-helm

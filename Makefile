@@ -12,7 +12,7 @@ COVERPROFILE := coverage.out
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -X main.version=$(VERSION)
 
-.PHONY: sync-nixpins build test test-integration lint tag release release-tag release-tag-preview sign clean fmt proto containerd containerd-setup containerd-clean containerd-exec
+.PHONY: sync-nixpins build test test-integration lint tag release release-notes release-tag release-tag-preview sign clean fmt proto containerd containerd-setup containerd-clean containerd-exec
 
 # Rewrite pkg/nixpins/pins.go from flake.lock. Run after `nix flake update`;
 # Renovate runs it automatically via postUpgradeTasks in renovate.json.
@@ -47,8 +47,19 @@ lint:
 fmt:
 	golangci-lint fmt
 
+# Release notes come from git-cliff (see cliff.toml), not from goreleaser:
+# goreleaser's changelog only ever sees commit subjects, so a BREAKING CHANGE
+# footer could not reach the release page. --release-notes replaces the body
+# entirely, which is why cliff.toml carries the header and footer too.
 release: lint test
-	goreleaser release --clean --config .goreleaser.yaml
+	@notes="$$(mktemp)"; \
+	git-cliff --latest > "$$notes" || { rm -f "$$notes"; exit 1; }; \
+	goreleaser release --clean --config .goreleaser.yaml --release-notes "$$notes"; \
+	rc=$$?; rm -f "$$notes"; exit $$rc
+
+# Preview the release notes for the current tag without releasing anything.
+release-notes:
+	@git-cliff --latest
 
 containerd-setup:
 	sudo mkdir -p /run/containerd/s /run/containerd/runc
