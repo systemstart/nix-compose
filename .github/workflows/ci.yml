@@ -71,10 +71,28 @@ jobs:
       # `nix build` covers the documented install path.
       - run: nix build --no-link
       - run: nix flake check
-      # `nix flake check` only *evaluates* `packages` outputs -- it builds
-      # `checks`, and there are none here. So the VM images are built
-      # explicitly: without this, a broken NixOS config (a kernel module that
-      # does not exist, say) reaches a release untouched by CI. They are
+
+  # The VM images are built in their own job, deliberately *not* in `release`'s
+  # `needs`. `nix flake check` only evaluates `packages` outputs, so without an
+  # explicit build a broken NixOS config reaches a release untouched by CI —
+  # that is how a kernel module name that does not exist survived. But these
+  # are not release artifacts (goreleaser ships CLI binaries), and each is a
+  # full NixOS system: on a cold cache that is hundreds of derivations and
+  # minutes of runner time. Gating a binary release on them means an unrelated
+  # cache miss or a full disk blocks a release that does not contain them.
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: DeterminateSystems/nix-installer-action@v22
+        with:
+          determinate: false
+          diagnostic-endpoint: ''
+      - uses: cachix/cachix-action@v17
+        with:
+          name: systemstart
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
       # Linux-only outputs, which this runner is.
       - run: nix build --no-link .#microvm-image .#ci-vm-image
 
