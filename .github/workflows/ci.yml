@@ -96,6 +96,33 @@ jobs:
       # Linux-only outputs, which this runner is.
       - run: nix build --no-link .#microvm-image .#ci-vm-image
 
+  # `make release` only ever runs on a tag, so a broken .goreleaser.yaml or
+  # cliff.toml would surface *after* the tag is pushed -- leaving a tag with no
+  # release. Exercise both config files on every push instead. This is
+  # deliberately not in `release`'s `needs`: `make release` runs git-cliff
+  # itself and aborts before publishing if it fails, so this is early warning,
+  # not a gate.
+  release-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # git-cliff needs the full history and the tags
+      - uses: DeterminateSystems/nix-installer-action@v22
+        with:
+          determinate: false
+          diagnostic-endpoint: ''
+      - uses: cachix/cachix-action@v17
+        with:
+          name: systemstart
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
+      - run: nix develop --command goreleaser check
+      # Renders the release notes for the latest tag. Catches a broken template
+      # or an unparseable cliff.toml; prints them to the log so a reviewer can
+      # see what a release would say.
+      - run: nix develop --command make release-notes
+
   # Integration tests need a CRI socket, which a stock GitHub runner does not
   # have — see docs/running-in-ci.md. They run against a real runtime locally.
 
