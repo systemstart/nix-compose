@@ -81,7 +81,7 @@ pkgs.mkShell {
     protobuf
     protoc-gen-go
     protoc-gen-go-grpc
-  ] ++ lib.optionals stdenv.isLinux [
+  ] ++ lib.optionals stdenv.hostPlatform.isLinux [
     # CI microVM runner dependencies
     virtiofsd
     cloud-hypervisor

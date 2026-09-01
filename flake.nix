@@ -39,7 +39,7 @@
 
         packages = {
           default = pkgs.nix-compose;
-        } // pkgs.lib.optionalAttrs pkgs.stdenv.isLinux {
+        } // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
           microvm-image = (pkgs.callPackage ./nix/microvm-image.nix {
             nixpkgs = nixpkgs;
             nix-compose-bin = pkgs.nix-compose;
