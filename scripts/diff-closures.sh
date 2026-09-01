@@ -20,7 +20,9 @@
 #   -r OLD_REV compare against this revision of INPUT instead of the one
 #              committed at HEAD
 #   -p PKG     also report PKG.version on both sides (repeatable), e.g.
-#              -p go_1_26. Use it for inputs whose version is load-bearing.
+#              -p openssl. Use it for packages whose version is load-bearing.
+#              (The Go toolchain is not one of these: it comes from the
+#              go-overlay input, so compare it with -i go-overlay.)
 #   -b         build and diff closures even when the derivations match
 #
 # Informational: the exit status reports whether the comparison ran, not
@@ -143,10 +145,8 @@ if [ "$old_rev" = "$new_rev" ]; then
     exit 0
 fi
 
-# Versions of individually load-bearing packages. `go` is what nix-package.nix
-# builds with and `go_1_26` is what shell.nix picks from go.mod: the two are
-# allowed to differ, but knowing which one a bump moved explains a rebuild
-# faster than the closure diff does.
+# Versions of individually load-bearing packages, reported before the closure
+# diff because a single name is easier to act on than a list of store paths.
 for pkg in ${witness+"${witness[@]}"}; do
     old_v="$(nix eval --raw "$old_ref#$pkg.version" 2>/dev/null || echo '?')"
     new_v="$(nix eval --raw "$new_ref#$pkg.version" 2>/dev/null || echo '?')"

@@ -1,4 +1,7 @@
-{ pkgs ? import <nixpkgs> { } }:
+# `go` is the toolchain to use. The flake passes the release pinned in
+# flake.nix; a bare `nix-shell` has no pin to hand over, so null falls back to
+# the newest patch of whatever minor go.mod names.
+{ pkgs ? import <nixpkgs> { }, go ? null }:
 
 let
   goMod = builtins.readFile ./go.mod;
@@ -9,8 +12,15 @@ let
   minor = builtins.elemAt parts 1;
   attr = "go_${major}_${minor}";
   goPkg =
-    builtins.trace "Go version from go.mod: ${fullVersion} (using nixpkgs ${attr})"
-      (if pkgs ? ${attr} then pkgs.${attr} else pkgs.go);
+    if go != null then
+      builtins.trace "Go ${go.version} (pinned in flake.nix)" go
+    else
+      builtins.trace "Go version from go.mod: ${fullVersion} (using nixpkgs ${attr})"
+        (if pkgs ? ${attr} then pkgs.${attr} else pkgs.go);
+
+  # e.g. "buildGo127Module" for a 1.27.x toolchain.
+  goBuilderAttr =
+    "buildGo${pkgs.lib.versions.major goPkg.version}${pkgs.lib.versions.minor goPkg.version}Module";
 
   gsemver = let
     version = "0.10.0";
@@ -57,12 +67,17 @@ pkgs.mkShell {
     # (nix-compose.yaml, `render --target k8s` output, the CI workflows) is YAML.
     jq
     yq-go
-    # The argument really is `buildGo126Module`, whatever Go we are on:
-    # that is the parameter name nixpkgs. golangci-lint package takes, and it
-    # pins its own builder deliberately. Overriding its `go` is what puts our
-    # toolchain (goPkg, derived from go.mod) underneath the linter, so it
-    # analyses code with the same compiler that builds it.
-    (golangci-lint.override { buildGo126Module = buildGo126Module.override { go = goPkg; }; })
+    # golangci-lint pins its own builder, and nixpkgs names that argument after
+    # the Go minor it expects -- buildGo126Module until golangci-lint 2.13.1,
+    # buildGo127Module after it. Hardcoding the name breaks on every such move
+    # ("function called with unexpected argument"), so derive it from the
+    # toolchain we pinned: that keeps the linter on the same compiler that
+    # builds the code, and when nixpkgs' expectation and our pin do drift it
+    # fails loudly with nixpkgs' own "Did you mean buildGo128Module?" hint
+    # rather than analysing with a different compiler.
+    (golangci-lint.override {
+      ${goBuilderAttr} = pkgs.${goBuilderAttr}.override { go = goPkg; };
+    })
     goreleaser
     # Generates the release notes (cliff.toml) that `make release` hands to
     # goreleaser via --release-notes.
@@ -88,7 +103,7 @@ pkgs.mkShell {
   ];
 
   shellHook = ''
-    echo "go devshell (go.mod: ${fullVersion})"
+    echo "go devshell (Go ${goPkg.version})"
     echo "GOPATH: $PWD/.go"
     export GOPATH=$PWD/.go
     mkdir -p $GOPATH

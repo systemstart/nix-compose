@@ -10,13 +10,43 @@
       url = "github:systemstart/nix-oci";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # The Go toolchain. go-overlay tracks go.dev directly -- every patch and
+    # RC, within hours of release -- so the pin below is never gated on when
+    # nixpkgs gets round to packaging a release: its default `go` still lagged
+    # 1.27.0 by weeks. Same mechanism nix-oci uses, where it matters more
+    # (there the compressor version is digest-affecting).
+    go-overlay = {
+      url = "github:purpleclay/go-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils, nix-oci }:
+  outputs = { self, nixpkgs, flake-utils, nix-oci, go-overlay }:
     let
+      # The Go release this repo builds and develops against. Note this is not
+      # go.mod's directive: that stays at the dependency graph's true minimum
+      # (containerd v2 needs 1.26.3), which is a floor for consumers, not a
+      # statement about which toolchain we build with.
+      # renovate: datasource=golang-version depName=go
+      goVersion = "1.27.0";
+
       # Overlay is system-independent.
+      #
+      # The toolchain pin lives here rather than in nix-package.nix, because
+      # that file is deliberately kept close to
+      # pkgs/by-name/ni/nix-compose/package.nix in nixpkgs, which cannot take a
+      # third-party overlay. So: when go-overlay is in scope (our flake, below)
+      # the pinned release is used; when someone applies this overlay to a plain
+      # nixpkgs, it falls back to that nixpkgs' default Go -- which is exactly
+      # what the nixpkgs build does anyway.
       overlayFn = final: prev: {
-        nix-compose = final.callPackage ./nix-package.nix { };
+        nix-compose = final.callPackage ./nix-package.nix (
+          nixpkgs.lib.optionalAttrs (final ? go-bin) {
+            buildGoModule = final.buildGoModule.override {
+              go = final.go-bin.versions.${goVersion};
+            };
+          }
+        );
       };
     in
     {
@@ -27,7 +57,7 @@
       let
         pkgs = import nixpkgs {
           inherit system;
-          overlays = [ overlayFn ];
+          overlays = [ go-overlay.overlays.default overlayFn ];
         };
       in {
         # buildOCIImage and mkComposition are functions, so they cannot live
@@ -52,7 +82,10 @@
           }).combined;
         };
 
-        devShells.default = import ./shell.nix { inherit pkgs; };
+        devShells.default = import ./shell.nix {
+          inherit pkgs;
+          go = pkgs.go-bin.versions.${goVersion};
+        };
       }
     );
 }

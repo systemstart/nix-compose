@@ -24,13 +24,12 @@ sync-nixpins:
 # the lock diff alone only says a revision moved, not whether the move reaches
 # anything we build. Evaluation-only unless the derivations differ.
 #
-# Both Go attributes are reported because the two halves of the repo choose
-# independently: nix-package.nix builds with the default `go`, while shell.nix
-# derives `go_1_26` from go.mod's directive.
-#
-# Pass through with ARGS, e.g. ARGS='-i nix-oci -a packages.x86_64-linux.default'.
+# The Go toolchain comes from the go-overlay input rather than from nixpkgs, so
+# there is nothing useful to pass to -p here: roll that input back instead, with
+# ARGS='-i go-overlay'. Other examples: ARGS='-i nix-oci', or
+# ARGS='-a packages.x86_64-linux.default'.
 diff-closures:
-	@scripts/diff-closures.sh -p go -p go_1_26 $(ARGS)
+	@scripts/diff-closures.sh $(ARGS)
 
 proto:
 	protoc --go_out=paths=source_relative:. --go-grpc_out=paths=source_relative:. \
