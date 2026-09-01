@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Reject pushes containing unsigned commits.
+#
+# pre-push, not pre-commit: a commit's signature is created when the commit
+# object is written, after pre-commit runs, so at pre-commit time there is
+# nothing to verify. Here the commits exist and can be checked for real.
+#
+# Tracked in .githooks so every clone gets the same guard, but it only runs
+# once that clone opts in:
+#
+#   git config core.hooksPath .githooks     # or `make hooks`
+#
+# It does not affect Renovate or any CI bot — they push from their own
+# infrastructure and never run these hooks. Server-side enforcement would be
+# GitHub's "require signed commits" branch rule instead.
+#
+# Bypass for a one-off:  git push --no-verify
+
+set -uo pipefail
+
+fail=0
+
+is_zero() { case "$1" in *[!0]*) return 1 ;; *) return 0 ;; esac; }
+
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  is_zero "$local_sha" && continue          # branch deletion
+
+  if is_zero "$remote_sha"; then
+    # New branch: only commits not already published anywhere.
+    mapfile -t commits < <(git rev-list "$local_sha" --not --remotes)
+  else
+    mapfile -t commits < <(git rev-list "$remote_sha".."$local_sha")
+  fi
+
+  for c in ${commits+"${commits[@]}"}; do
+    sig=$(git log -1 --format='%G?' "$c" 2>/dev/null)
+    case "$sig" in
+      G|U) ;;
+      *)
+        [ "$fail" = 0 ] && echo "unsigned commits in this push:" >&2
+        printf '  %s %s %s\n' "$(git rev-parse --short "$c")" "${sig:-?}" \
+          "$(git log -1 --format=%s "$c")" >&2
+        fail=1 ;;
+    esac
+  done
+done
+
+if [ "$fail" != 0 ]; then
+  cat >&2 <<'MSG'
+
+sign them first:
+  git sign-branch          # or: git rebase --force-rebase --gpg-sign <base>
+
+push anyway with:
+  git push --no-verify
+MSG
+  exit 1
+fi
