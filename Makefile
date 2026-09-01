@@ -12,12 +12,25 @@ COVERPROFILE := coverage.out
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS := -X main.version=$(VERSION)
 
-.PHONY: sync-nixpins build test test-integration lint tag release release-notes release-tag release-tag-preview sign clean fmt proto containerd containerd-setup containerd-clean containerd-exec
+.PHONY: sync-nixpins diff-closures build test test-integration lint tag release release-notes release-tag release-tag-preview sign clean fmt proto containerd containerd-setup containerd-clean containerd-exec
 
 # Rewrite pkg/nixpins/pins.go from flake.lock. Run after `nix flake update`;
 # Renovate runs it automatically via postUpgradeTasks in renovate.json.
 sync-nixpins:
 	@scripts/sync-nixpins.sh
+
+# What did the last `nix flake update` actually change? Rebuilds an attribute
+# against the nixpkgs revision committed at HEAD and diffs the two closures --
+# the lock diff alone only says a revision moved, not whether the move reaches
+# anything we build. Evaluation-only unless the derivations differ.
+#
+# Both Go attributes are reported because the two halves of the repo choose
+# independently: nix-package.nix builds with the default `go`, while shell.nix
+# derives `go_1_26` from go.mod's directive.
+#
+# Pass through with ARGS, e.g. ARGS='-i nix-oci -a packages.x86_64-linux.default'.
+diff-closures:
+	@scripts/diff-closures.sh -p go -p go_1_26 $(ARGS)
 
 proto:
 	protoc --go_out=paths=source_relative:. --go-grpc_out=paths=source_relative:. \
