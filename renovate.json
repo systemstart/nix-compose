@@ -15,15 +15,6 @@
       "before 7am on monday"
     ]
   },
-  "postUpgradeTasks": {
-    "commands": [
-      "scripts/sync-nixpins.sh"
-    ],
-    "fileFilters": [
-      "pkg/nixpins/pins.go"
-    ],
-    "executionMode": "branch"
-  },
   "packageRules": [
     {
       "matchManagers": [
@@ -61,6 +52,35 @@
       ],
       "commitMessagePrefix": "chore(deps):",
       "commitMessageExtra": "({{{newVersion}}})"
+    },
+    {
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "commitMessagePrefix": "build(deps):"
+    },
+    {
+      "matchManagers": [
+        "nix"
+      ],
+      "matchPackageNames": [
+        "go-overlay"
+      ],
+      "commitMessagePrefix": "chore(deps):",
+      "commitMessageExtra": "({{{newVersion}}})"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "The Go release pinned in flake.nix and provided by go-overlay. nixpkgs' default `go` is not what this repo builds with, so the gomod manager's view of the go directive is not the thing to track.",
+      "managerFilePatterns": [
+        "/^flake\\.nix$/"
+      ],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s*\\n\\s*goVersion\\s*=\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "versioningTemplate": "semver"
     }
   ]
 }
