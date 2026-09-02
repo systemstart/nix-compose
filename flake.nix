@@ -6,8 +6,15 @@
     flake-utils.url = "github:numtide/flake-utils";
     # Builds a service's image from a Nix closure (ADR-006, ADR-015). Its
     # nixpkgs is followed so an image and the closure it packages agree.
+    #
+    # Pinned to a release tag, not the default branch. nix-oci's compressor is
+    # digest-affecting, so every move of this input re-digests every image
+    # nix-compose builds; on a branch ref that would happen silently on any
+    # lock-file-maintenance run. A tag makes it a deliberate, reviewable bump
+    # that lines up with a nix-oci release -- the same way the consumer repos
+    # pin it.
     nix-oci = {
-      url = "github:systemstart/nix-oci";
+      url = "github:systemstart/nix-oci/v0.5.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # The Go toolchain. go-overlay tracks go.dev directly -- every patch and

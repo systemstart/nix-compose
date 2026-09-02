@@ -17,7 +17,7 @@ const (
 
 	// NixOCIRev supplies buildOCIImage, which turns a package's closure into
 	// an OCI image (ADR-006, ADR-015).
-	NixOCIRev = "226081ecf16026ea14ed73e166be5dfeefe7357d"
+	NixOCIRev = "d0f22c9b0db852cb32a5c463872b8dd122438393"
 )
 
 // NixpkgsRef returns the default nixpkgs flake reference. It is pinned to a
