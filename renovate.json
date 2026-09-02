@@ -57,7 +57,10 @@
       "matchManagers": [
         "custom.regex"
       ],
-      "commitMessagePrefix": "build(deps):"
+      "commitMessagePrefix": "build(deps):",
+      "prBodyNotes": [
+        "If CI fails with ``attribute '\"X.Y.Z\"' missing``, the locked `go-overlay` input is older than the pin this PR proposes. Merge the lock-file-maintenance PR first \u2014 it is scheduled earlier (07:00 vs 09:00 Monday) for exactly this \u2014 or run `nix flake update go-overlay` on this branch."
+      ]
     },
     {
       "matchManagers": [
