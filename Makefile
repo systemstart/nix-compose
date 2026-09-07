@@ -125,8 +125,8 @@ release-tag-preview:
 # agreement.
 #
 # The release notes are goreleaser's job, not this target's: it groups the
-# commits since the last tag into the GitHub release body. CHANGELOG.md is
-# hand-written and only covers releases worth a paragraph.
+# commits since the last tag into the GitHub release body, which is the only
+# changelog this repo keeps.
 release-tag:
 	$(eval VERSION := $(shell gsemver bump))
 	@test -n "$(VERSION)" || { \

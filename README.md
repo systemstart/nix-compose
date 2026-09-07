@@ -64,7 +64,8 @@ lifecycle with familiar commands.
   evaluating locally; `up --microvm` boots a NixOS microVM via
   cloud-hypervisor and orchestrates inside it over vsock
 
-See [CHANGELOG.md](CHANGELOG.md) for the full release history, and
+See the [releases](https://github.com/systemstart/nix-compose/releases) for
+the release history — each body carries the changelog for that tag — and
 [docs/limitations.md](docs/limitations.md) for what does not work.
 
 ## Requirements

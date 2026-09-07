@@ -49,8 +49,10 @@ goreleaser, which publishes them as the GitHub release body. `make
 release-notes` renders them for the current tag without releasing anything —
 run it before tagging if you want to see what the page will say.
 
-`CHANGELOG.md` is hand-written and only covers releases worth a paragraph — it
-is not generated, and not every release needs an entry.
+That release body is the whole record: there is no checked-in changelog file
+to keep in step with it. Anything a reader needs to know about a release has
+to be in the commit messages git-cliff renders from, so write the subject and
+the `BREAKING CHANGE:` footer for the person reading the release page.
 
 ### Marking a breaking change
 
