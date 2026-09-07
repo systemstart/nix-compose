@@ -60,7 +60,14 @@ A bind-mounted file (`./conf/app.yml:/etc/app.yml`) renders as a generated
 ConfigMap mounted with `subPath`. A bind mount with no K8s equivalent — a
 directory, a path outside the project, a binary or missing file — fails the
 render and names the service and the volume, rather than emitting an empty
-directory the container would start without.
+directory the container would start without. A file holding a PEM private key
+fails too: a ConfigMap is not a Secret. `--secret-material=configmap` renders
+it anyway.
+
+`render` honours `--profile` exactly as `up` does: a service that declares
+`profiles` is rendered only when one of them is active, so services excluded
+from a deployment can be kept out of the manifests by leaving their profile
+inactive.
 
 ## Configuration Structure
 

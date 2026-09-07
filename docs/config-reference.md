@@ -76,7 +76,7 @@ Each key in `services` is a service name. Supported fields:
 |-------|------|-------------|
 | `depends_on` | list or map | Service dependencies |
 | `healthcheck` | object | Health check configuration |
-| `profiles` | list of strings | Profiles this service belongs to |
+| `profiles` | list of strings | Profiles this service belongs to. A service declaring profiles runs only when one of them is active (`--profile`); with no profile active, only services declaring none run. Applies to `up`, `plan` and `render` alike. |
 | `labels` | attrset | Container labels |
 
 #### `depends_on` (map form)

@@ -6,9 +6,15 @@ import (
 	"github.com/systemstart/nix-compose/pkg/eval"
 )
 
-// FilterByProfiles returns a new Composition containing only services that
-// match the given profiles. An empty profiles list means all services are
-// included. Services with no profiles are always included.
+// FilterByProfiles returns a new Composition containing only the services
+// that the given active profiles enable.
+//
+// A service with no `profiles` is always enabled. A service that declares
+// profiles is enabled only when one of them is active — including when no
+// profile is active at all, which enables the unprofiled services and nothing
+// else. That is the Compose rule, and the point of declaring a profile: an
+// empty list used to mean "everything", which made `profiles` decorative
+// unless a flag was passed.
 //
 // When a profiled service is activated, its depends_on targets are
 // transitively included regardless of their own profile tags (matching
@@ -16,10 +22,6 @@ import (
 //
 // After filtering, dangling depends_on references are pruned.
 func FilterByProfiles(comp *eval.Composition, profiles []string) *eval.Composition {
-	if len(profiles) == 0 {
-		return comp
-	}
-
 	// First pass: collect directly matched services.
 	matched := make(map[string]bool, len(comp.Services))
 	for name, svc := range comp.Services {

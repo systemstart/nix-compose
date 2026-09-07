@@ -6,11 +6,18 @@ import (
 	"github.com/systemstart/nix-compose/pkg/eval"
 )
 
-func TestFilterByProfiles_EmptyProfiles(t *testing.T) {
+func TestFilterByProfiles_EmptyProfilesEnablesOnlyUnprofiled(t *testing.T) {
 	comp := loadJSONFixture(t, "with-profiles.json")
 	result := FilterByProfiles(comp, nil)
-	if len(result.Services) != len(comp.Services) {
-		t.Errorf("expected all %d services, got %d", len(comp.Services), len(result.Services))
+
+	// "worker" declares no profiles; "api" and "db" are behind "backend".
+	// Activating nothing must not enable them — a profile that only takes
+	// effect once a flag is passed is not a profile.
+	if len(result.Services) != 1 {
+		t.Fatalf("expected 1 unprofiled service, got %d: %v", len(result.Services), serviceNames(result))
+	}
+	if _, ok := result.Services["worker"]; !ok {
+		t.Errorf("expected the unprofiled service to survive, got %v", serviceNames(result))
 	}
 }
 
