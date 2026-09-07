@@ -11,6 +11,7 @@ import (
 	"github.com/systemstart/nix-compose/internal/testsock"
 
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
 	runtimev1 "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 
@@ -153,7 +154,10 @@ func (m *fullMockCRI) ListPodSandbox(_ context.Context, req *runtimev1.ListPodSa
 	var items []*runtimev1.PodSandbox
 	for _, pod := range m.pods {
 		if matchLabels(pod.Labels, req.Filter.GetLabelSelector()) {
-			items = append(items, pod)
+			// Cloned: gRPC marshals this response after the handler has
+			// returned and released the lock, so handing out the stored
+			// message races any later mutation of it.
+			items = append(items, proto.Clone(pod).(*runtimev1.PodSandbox))
 		}
 	}
 	return &runtimev1.ListPodSandboxResponse{Items: items}, nil
@@ -206,7 +210,10 @@ func (m *fullMockCRI) ListContainers(_ context.Context, req *runtimev1.ListConta
 	var items []*runtimev1.Container
 	for _, ctr := range m.containers {
 		if req.Filter.GetPodSandboxId() == "" || ctr.PodSandboxId == req.Filter.GetPodSandboxId() {
-			items = append(items, ctr)
+			// Cloned: gRPC marshals this response after the handler has
+			// returned and released the lock, so handing out the stored
+			// message races any later mutation of it.
+			items = append(items, proto.Clone(ctr).(*runtimev1.Container))
 		}
 	}
 	return &runtimev1.ListContainersResponse{Containers: items}, nil
