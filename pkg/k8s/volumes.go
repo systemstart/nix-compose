@@ -35,6 +35,7 @@ type volumePlan struct {
 	configMaps []ConfigMap
 	warnings   []string
 	refusals   []error
+	overrides  []string
 	// names maps an assigned volume name to the source that claimed it, so
 	// two sources that sanitize alike get distinct names.
 	names map[string]string
@@ -109,11 +110,8 @@ func (p *volumePlan) addConfigMap(svcName, vol, source, dest, content, filename 
 	name := p.claimName(sanitizeName(svcName+"-"+filename), source)
 	key := configMapKey(filename)
 
-	if strings.Contains(content, pemPrivateKeyMarker) {
-		p.warnings = append(p.warnings, fmt.Sprintf(
-			"service %q: volume %q: ConfigMap %q carries a private key in plain text, and a ConfigMap is not a Secret "+
-				"— anyone who can read the namespace, or the rendered file, can read the key; replace the mount with a "+
-				"Secret you manage", svcName, vol, name))
+	if strings.Contains(content, pemPrivateKeyMarker) && !p.allowSecretMaterial(svcName, vol, source, name, opts) {
+		return
 	}
 
 	p.addPodVolume(PodVolume{Name: name, ConfigMap: &ConfigMapVolumeSource{Name: name}})
@@ -130,11 +128,42 @@ func (p *volumePlan) addConfigMap(svcName, vol, source, dest, content, filename 
 	p.mounts[vol] = VolumeMount{Name: name, MountPath: dest, SubPath: key, ReadOnly: true}
 }
 
+// allowSecretMaterial applies the configured policy to a file whose content
+// is secret material, and reports whether rendering it into a ConfigMap may
+// proceed.
+func (p *volumePlan) allowSecretMaterial(svcName, vol, source, cmName string, opts RenderOptions) bool {
+	if opts.SecretMaterial != SecretMaterialConfigMap {
+		p.refuse(fmt.Errorf("service %q: volume %q: %s carries a private key, and a ConfigMap is not a Secret — "+
+			"rendering it writes the key in plain text into the manifest, and into version control if the output is "+
+			"committed; mount it from a Secret you manage instead", svcName, vol, source),
+			"--secret-material="+string(SecretMaterialConfigMap))
+		return false
+	}
+	p.warnings = append(p.warnings, fmt.Sprintf(
+		"service %q: volume %q: ConfigMap %q carries a private key in plain text, and a ConfigMap is not a Secret "+
+			"— anyone who can read the namespace, or the rendered file, can read the key; replace the mount with a "+
+			"Secret you manage", svcName, vol, cmName))
+	return true
+}
+
+// refuse records a refusal together with the flag that would render it
+// anyway, so the caller can name the override that applies.
+func (p *volumePlan) refuse(err error, override string) {
+	p.refusals = append(p.refusals, err)
+	for _, o := range p.overrides {
+		if o == override {
+			return
+		}
+	}
+	p.overrides = append(p.overrides, override)
+}
+
 // addUnrepresentable applies the configured policy to a bind mount with no
 // K8s equivalent: refuse, or fall back to an empty directory with a warning.
 func (p *volumePlan) addUnrepresentable(svcName, vol, source, dest string, readOnly bool, cause error, opts RenderOptions) {
 	if opts.UnrepresentableMounts != MountPolicyEmptyDir {
-		p.refusals = append(p.refusals, fmt.Errorf("service %q: volume %q: %w", svcName, vol, cause))
+		p.refuse(fmt.Errorf("service %q: volume %q: %w", svcName, vol, cause),
+			"--unrepresentable-mounts="+string(MountPolicyEmptyDir))
 		return
 	}
 	p.warnings = append(p.warnings,

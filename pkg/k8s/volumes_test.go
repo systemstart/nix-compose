@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"syscall"
 	"testing"
@@ -318,7 +319,7 @@ func TestConvert_ReportsEveryRefusalAtOnce(t *testing.T) {
 			"not fail again on the next one", len(unrepresentable.Refusals))
 	}
 	msg := err.Error()
-	if !strings.HasPrefix(msg, "3 bind mounts have no Kubernetes equivalent:") {
+	if !strings.HasPrefix(msg, "3 bind mounts cannot be rendered:") {
 		t.Errorf("error %q does not lead with the count", msg)
 	}
 	for _, svc := range []string{"alloy", "hydra", "keto"} {
@@ -351,6 +352,66 @@ func TestReadBindSource_RefusesNonRegularFile(t *testing.T) {
 	}
 }
 
+// pemKeyProject writes a project whose only mount is a private key.
+func pemKeyProject(t *testing.T) (dir string, comp *eval.Composition) {
+	t.Helper()
+	dir = t.TempDir()
+	pem := "-----BEGIN PRIVATE KEY-----\nMIIBVAIBADANBg==\n-----END PRIVATE KEY-----\n"
+	if err := os.WriteFile(filepath.Join(dir, "tls-key.pem"), []byte(pem), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return dir, &eval.Composition{Services: map[string]eval.Service{
+		"ingress": {Image: "traefik", Volumes: []string{"./tls-key.pem:/etc/certs/tls-key.pem:ro"}},
+	}}
+}
+
+func TestConvert_RefusesSecretMaterialByDefault(t *testing.T) {
+	dir, comp := pemKeyProject(t)
+
+	_, err := Convert(comp, nil, RenderOptions{Namespace: "default", ProjectDir: dir})
+	if err == nil {
+		t.Fatal("Convert rendered a private key into a ConfigMap; a warning is not a control — " +
+			"a CI job that renders and commits carries the key into version control")
+	}
+
+	var refused *MountRefusalError
+	if !errors.As(err, &refused) {
+		t.Fatalf("error is %T, want *MountRefusalError", err)
+	}
+	msg := err.Error()
+	for _, want := range []string{"ingress", "tls-key.pem", "not a Secret"} {
+		if !strings.Contains(msg, want) {
+			t.Errorf("error %q does not mention %q", msg, want)
+		}
+	}
+	if !slices.Contains(refused.Overrides, "--secret-material=configmap") {
+		t.Errorf("overrides = %v, want the flag that renders it anyway", refused.Overrides)
+	}
+}
+
+func TestConvert_RefusalsNameOnlyTheOverridesThatApply(t *testing.T) {
+	dir, _ := pemKeyProject(t)
+	comp := &eval.Composition{Services: map[string]eval.Service{
+		"ingress": {Image: "traefik", Volumes: []string{"./tls-key.pem:/etc/certs/tls-key.pem:ro"}},
+		"web":     {Image: "nginx", Volumes: []string{"./nope.yml:/etc/nope.yml:ro"}},
+	}}
+
+	_, err := Convert(comp, nil, RenderOptions{Namespace: "default", ProjectDir: dir})
+	var refused *MountRefusalError
+	if !errors.As(err, &refused) {
+		t.Fatalf("error is %T, want *MountRefusalError", err)
+	}
+	want := []string{"--unrepresentable-mounts=empty-dir", "--secret-material=configmap"}
+	for _, w := range want {
+		if !slices.Contains(refused.Overrides, w) {
+			t.Errorf("overrides = %v, missing %q", refused.Overrides, w)
+		}
+	}
+	if len(refused.Overrides) != len(want) {
+		t.Errorf("overrides = %v, want exactly the two that apply", refused.Overrides)
+	}
+}
+
 func TestConvert_WarnsWhenAConfigMapWouldCarryAPrivateKey(t *testing.T) {
 	dir := t.TempDir()
 	pem := "-----BEGIN PRIVATE KEY-----\nMIIBVAIBADANBg==\n-----END PRIVATE KEY-----\n"
@@ -361,7 +422,11 @@ func TestConvert_WarnsWhenAConfigMapWouldCarryAPrivateKey(t *testing.T) {
 		"ingress": {Image: "traefik", Volumes: []string{"./tls-key.pem:/etc/certs/tls-key.pem:ro"}},
 	}}
 
-	result, err := Convert(comp, nil, RenderOptions{Namespace: "default", ProjectDir: dir})
+	result, err := Convert(comp, nil, RenderOptions{
+		Namespace:      "default",
+		ProjectDir:     dir,
+		SecretMaterial: SecretMaterialConfigMap,
+	})
 	if err != nil {
 		t.Fatalf("Convert: %v", err)
 	}

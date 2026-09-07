@@ -233,6 +233,22 @@ const (
 	MountPolicyEmptyDir MountPolicy = "empty-dir"
 )
 
+// SecretMaterialPolicy decides what rendering does with a bind-mounted file
+// whose content is secret material.
+type SecretMaterialPolicy string
+
+const (
+	// SecretMaterialError refuses to render, naming the service and the
+	// volume. This is the default: a ConfigMap is not a Secret, and a
+	// warning that does not reach the exit status is not a control — a CI
+	// job that renders and commits will carry the key into version control
+	// without anyone reading stderr.
+	SecretMaterialError SecretMaterialPolicy = "error"
+	// SecretMaterialConfigMap renders the key into a ConfigMap and reports a
+	// warning, which is what nix-compose did unconditionally in v0.4.0.
+	SecretMaterialConfigMap SecretMaterialPolicy = "configmap"
+)
+
 // RenderOptions holds configuration for the K8s rendering pipeline.
 type RenderOptions struct {
 	Namespace string
@@ -243,6 +259,9 @@ type RenderOptions struct {
 	// UnrepresentableMounts selects the handling of bind mounts that have no
 	// K8s equivalent. The zero value is MountPolicyError.
 	UnrepresentableMounts MountPolicy
+	// SecretMaterial selects the handling of a bind-mounted file whose
+	// content is secret material. The zero value is SecretMaterialError.
+	SecretMaterial SecretMaterialPolicy
 }
 
 // Result carries the manifests Convert produced, plus the diagnostics it

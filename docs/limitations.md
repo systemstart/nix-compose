@@ -232,12 +232,18 @@ Deployment in an overlay; for a data directory, declare a named volume.
 
 The content of a bind-mounted file is copied verbatim into the rendered
 ConfigMap, whatever it is. Mounting a TLS private key or a credentials file
-puts that material in plain text into the manifest — and into version
+would put that material in plain text into the manifest — and into version
 control, if the rendered output is committed.
 
-A file whose content carries a PEM private key header is reported as a
-warning naming the service, the volume and the ConfigMap. Nothing else is
-detected: a token in a YAML config looks like configuration.
+A file whose content carries a PEM private key header therefore **fails the
+render** (`--secret-material=error`, the default), naming the service and the
+volume. `--secret-material=configmap` renders it anyway with a warning, which
+is what v0.4.0 did unconditionally.
+
+Only PEM private keys are detected. Nothing else is: a token in a YAML config
+looks like configuration, and no amount of guessing changes that. The refusal
+is a backstop for the case that can be recognised, not a guarantee that
+nothing sensitive reaches a ConfigMap.
 
 **Workaround:** mount secret material from a `Secret` you manage, patched in
 via an overlay, rather than from a bind mount.

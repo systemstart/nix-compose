@@ -86,6 +86,25 @@ happened to run `render`. The Nix store is the exception — it is readable,
 content-addressed and deterministic, so `"${configFile}:/etc/app.yml"`, and
 a project file that is a symlink into the store, are both representable.
 
+### Secret material is refused, not warned about
+
+The content reaches the manifest verbatim, so a bind-mounted private key
+would become plain text in a ConfigMap — and in version control wherever the
+rendered output is committed. v0.4.0 reported that as a warning. That was too
+weak: a warning does not reach the exit status, so a CI job that renders and
+commits does the wrong thing silently, and the remedy afterwards is a history
+rewrite rather than deleting a file.
+
+A file carrying a PEM private key header now fails the render, under the same
+policy shape as an unrepresentable mount (`--secret-material=configmap`
+restores the old behaviour). Only PEM keys are detected: a token in a YAML
+config is indistinguishable from configuration, so this is a backstop for the
+recognisable case, not a guarantee.
+
+The refusals of both kinds are collected together and reported in one run,
+and the error names only the override flags that actually apply to what was
+refused.
+
 ### The refusal is a policy, not a law
 
 `--unrepresentable-mounts=empty-dir` (`RenderOptions.UnrepresentableMounts`)

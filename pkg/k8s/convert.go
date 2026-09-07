@@ -2,24 +2,34 @@ package k8s
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
 	"github.com/systemstart/nix-compose/pkg/eval"
 )
 
-// UnrepresentableMountError reports every bind mount a render refused, so
-// one run names all of them rather than one per run.
-type UnrepresentableMountError struct {
-	Refusals []error
+// MountRefusalError reports every bind mount a render refused, so one run
+// names all of them rather than one per run. Refusal has two causes — a mount
+// with no Kubernetes equivalent, and one whose content is secret material —
+// and Overrides carries the flag that would render each kind anyway.
+type MountRefusalError struct {
+	Refusals  []error
+	Overrides []string
 }
 
-func (e *UnrepresentableMountError) Error() string {
+// UnrepresentableMountError is the previous name of MountRefusalError, kept
+// as an alias so existing errors.As targets keep compiling.
+//
+// Deprecated: use MountRefusalError.
+type UnrepresentableMountError = MountRefusalError
+
+func (e *MountRefusalError) Error() string {
 	var b strings.Builder
 	if len(e.Refusals) == 1 {
-		b.WriteString("1 bind mount has no Kubernetes equivalent:")
+		b.WriteString("1 bind mount cannot be rendered:")
 	} else {
-		fmt.Fprintf(&b, "%d bind mounts have no Kubernetes equivalent:", len(e.Refusals))
+		fmt.Fprintf(&b, "%d bind mounts cannot be rendered:", len(e.Refusals))
 	}
 	for _, r := range e.Refusals {
 		b.WriteString("\n  - ")
@@ -29,7 +39,7 @@ func (e *UnrepresentableMountError) Error() string {
 }
 
 // Unwrap exposes the individual refusals to errors.Is and errors.As.
-func (e *UnrepresentableMountError) Unwrap() []error { return e.Refusals }
+func (e *MountRefusalError) Unwrap() []error { return e.Refusals }
 
 // Convert transforms a Composition and resolved secrets into K8s manifests.
 // Output ordering is deterministic: Secrets, ConfigMaps, PVCs, then
@@ -70,16 +80,29 @@ func planCompositionVolumes(comp *eval.Composition, opts RenderOptions) (map[str
 	plans := make(map[string]*volumePlan, len(comp.Services))
 	var warnings []string
 	var refusals []error
+	var overrides []string
 	for _, name := range sortedServiceNames(comp) {
 		plan := planVolumes(name, comp.Services[name], volumes, opts)
 		plans[name] = plan
 		warnings = append(warnings, plan.warnings...)
 		refusals = append(refusals, plan.refusals...)
+		overrides = mergeOverrides(overrides, plan.overrides)
 	}
 	if len(refusals) > 0 {
-		return nil, nil, &UnrepresentableMountError{Refusals: refusals}
+		return nil, nil, &MountRefusalError{Refusals: refusals, Overrides: overrides}
 	}
 	return plans, warnings, nil
+}
+
+// mergeOverrides appends the overrides not already present, keeping the
+// order in which they were first reported.
+func mergeOverrides(into, from []string) []string {
+	for _, o := range from {
+		if !slices.Contains(into, o) {
+			into = append(into, o)
+		}
+	}
+	return into
 }
 
 // convertSecrets produces Secret manifests for services with resolved envFrom.

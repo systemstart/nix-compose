@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/systemstart/nix-compose/pkg/composition"
@@ -20,6 +21,7 @@ var (
 	renderNamespace       string
 	renderDryRun          bool
 	renderUnrepresentable string
+	renderSecretMaterial  string
 )
 
 var renderCmd = &cobra.Command{
@@ -36,6 +38,8 @@ func init() {
 	renderCmd.Flags().BoolVar(&renderDryRun, "dry-run", false, "validate via kubectl apply --dry-run=client")
 	renderCmd.Flags().StringVar(&renderUnrepresentable, "unrepresentable-mounts", string(k8s.MountPolicyError),
 		"handling of bind mounts with no K8s equivalent: error|empty-dir")
+	renderCmd.Flags().StringVar(&renderSecretMaterial, "secret-material", string(k8s.SecretMaterialError),
+		"handling of a bind-mounted file holding a private key: error|configmap")
 }
 
 func runRender(_ *cobra.Command, _ []string) error {
@@ -62,11 +66,16 @@ func renderK8s(ctx context.Context, dir string) error {
 	if err != nil {
 		return err
 	}
+	secretPolicy, err := secretMaterialPolicy(renderSecretMaterial)
+	if err != nil {
+		return err
+	}
 
 	opts := k8s.RenderOptions{
 		Namespace:             renderNamespace,
 		ProjectDir:            dir,
 		UnrepresentableMounts: policy,
+		SecretMaterial:        secretPolicy,
 	}
 	result, err := k8s.Convert(comp, secrets, opts)
 	if err != nil {
@@ -82,12 +91,25 @@ func renderK8s(ctx context.Context, dir string) error {
 // renderError annotates a conversion failure, pointing an unrepresentable
 // mount at the flag that renders it anyway.
 func renderError(err error) error {
-	var unrepresentable *k8s.UnrepresentableMountError
-	if errors.As(err, &unrepresentable) {
-		return fmt.Errorf("rendering manifests: %w\n\nRe-run with --unrepresentable-mounts=%s to render these as empty "+
-			"directories instead; each container then starts without that path", err, k8s.MountPolicyEmptyDir)
+	var refused *k8s.MountRefusalError
+	if errors.As(err, &refused) && len(refused.Overrides) > 0 {
+		return fmt.Errorf("rendering manifests: %w\n\nTo render these anyway, re-run with: %s",
+			err, strings.Join(refused.Overrides, " "))
 	}
 	return fmt.Errorf("rendering manifests: %w", err)
+}
+
+// secretMaterialPolicy parses the --secret-material flag.
+func secretMaterialPolicy(value string) (k8s.SecretMaterialPolicy, error) {
+	switch k8s.SecretMaterialPolicy(value) {
+	case k8s.SecretMaterialError:
+		return k8s.SecretMaterialError, nil
+	case k8s.SecretMaterialConfigMap:
+		return k8s.SecretMaterialConfigMap, nil
+	default:
+		return "", fmt.Errorf("unsupported --secret-material %q (supported: %s, %s)",
+			value, k8s.SecretMaterialError, k8s.SecretMaterialConfigMap)
+	}
 }
 
 // mountPolicy parses the --unrepresentable-mounts flag.
