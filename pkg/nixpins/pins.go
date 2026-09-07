@@ -13,7 +13,7 @@ package nixpins
 
 const (
 	// NixpkgsRev is the nixpkgs `package:` resolves against by default.
-	NixpkgsRev = "e8be7818e19ada32105a8af937a6a473b38167ca"
+	NixpkgsRev = "0af3d1402dec3fc7e93635e511d1f7428c89cebf"
 
 	// NixOCIRev supplies buildOCIImage, which turns a package's closure into
 	// an OCI image (ADR-006, ADR-015).

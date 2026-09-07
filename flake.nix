@@ -37,12 +37,12 @@
       # Renovate proposes bumps from the golang-version datasource (see
       # renovate.json). go-overlay publishes a new Go release within hours, but
       # this flake sees only what flake.lock has: bumping the literal on its own
-      # fails to evaluate -- `attribute '"1.27.1"' missing` -- for as long as
+      # fails to evaluate -- `attribute '"1.27.2"' missing` -- for as long as
       # the locked go-overlay predates the release. Merge the lock-file
       # maintenance PR first (scheduled earlier for that reason), or run
       # `nix flake update go-overlay` in the same branch.
       # renovate: datasource=golang-version depName=go
-      goVersion = "1.27.0";
+      goVersion = "1.27.1";
 
       # Overlay is system-independent.
       #
