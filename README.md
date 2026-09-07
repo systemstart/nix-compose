@@ -471,9 +471,15 @@ Generate K8s manifests from the same Nix config used for local dev:
 nix-compose render --target k8s --output ./k8s/
 ```
 
-Emits `Deployment`, `Service`, `Secret`, `PersistentVolumeClaim`, and a base
-`kustomization.yaml`. Optionally validates with
-`kubectl apply --dry-run=client`.
+Emits `Deployment`, `Service`, `Secret`, `ConfigMap`,
+`PersistentVolumeClaim`, and a base `kustomization.yaml`. Optionally
+validates with `kubectl apply --dry-run=client`.
+
+A bind-mounted configuration file becomes a generated ConfigMap mounted with
+`subPath`. A bind mount the target cannot represent — a directory, a path
+outside the project, a binary or missing file — fails the render rather than
+emitting an empty volume; pass `--unrepresentable-mounts=empty-dir` to
+downgrade that to a warning.
 
 ### `exec` behaviour
 

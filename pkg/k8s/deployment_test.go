@@ -8,7 +8,7 @@ import (
 
 func TestConvertDeployment_Minimal(t *testing.T) {
 	svc := eval.Service{Image: "nginx:latest"}
-	m := convertDeployment("web", svc, nil, RenderOptions{Namespace: "default"})
+	m := convertDeployment("web", svc, testPlan(t, "web", svc, nil), RenderOptions{Namespace: "default"})
 
 	d, ok := m.Object.(Deployment)
 	if !ok {
@@ -37,7 +37,7 @@ func TestConvertDeployment_WithCommand(t *testing.T) {
 		Image:   "node:18",
 		Command: eval.CommandValue{Parts: []string{"node", "server.js"}},
 	}
-	m := convertDeployment("api", svc, nil, RenderOptions{Namespace: "default"})
+	m := convertDeployment("api", svc, testPlan(t, "api", svc, nil), RenderOptions{Namespace: "default"})
 	d := m.Object.(Deployment)
 	c := d.Spec.Template.Spec.Containers[0]
 	if len(c.Command) != 2 || c.Command[0] != "node" {
@@ -55,7 +55,7 @@ func TestConvertDeployment_NamedPorts(t *testing.T) {
 			},
 		},
 	}
-	m := convertDeployment("web", svc, nil, RenderOptions{Namespace: "default"})
+	m := convertDeployment("web", svc, testPlan(t, "web", svc, nil), RenderOptions{Namespace: "default"})
 	d := m.Object.(Deployment)
 	ports := d.Spec.Template.Spec.Containers[0].Ports
 	if len(ports) != 2 {
@@ -74,7 +74,7 @@ func TestConvertDeployment_FallbackPorts(t *testing.T) {
 		Image: "nginx",
 		Ports: []string{"8080:80", "53:53/udp"},
 	}
-	m := convertDeployment("web", svc, nil, RenderOptions{Namespace: "default"})
+	m := convertDeployment("web", svc, testPlan(t, "web", svc, nil), RenderOptions{Namespace: "default"})
 	d := m.Object.(Deployment)
 	ports := d.Spec.Template.Spec.Containers[0].Ports
 	if len(ports) != 2 {
@@ -98,7 +98,7 @@ func TestConvertDeployment_Resources(t *testing.T) {
 			},
 		},
 	}
-	m := convertDeployment("api", svc, nil, RenderOptions{Namespace: "default"})
+	m := convertDeployment("api", svc, testPlan(t, "api", svc, nil), RenderOptions{Namespace: "default"})
 	d := m.Object.(Deployment)
 	res := d.Spec.Template.Spec.Containers[0].Resources
 	if res == nil {
@@ -129,7 +129,7 @@ func TestConvertDeployment_BothProbes(t *testing.T) {
 			},
 		},
 	}
-	m := convertDeployment("api", svc, nil, RenderOptions{Namespace: "default"})
+	m := convertDeployment("api", svc, testPlan(t, "api", svc, nil), RenderOptions{Namespace: "default"})
 	d := m.Object.(Deployment)
 	c := d.Spec.Template.Spec.Containers[0]
 	if c.LivenessProbe == nil {
@@ -165,7 +165,7 @@ func TestConvertDeployment_InitContainers(t *testing.T) {
 			},
 		},
 	}
-	m := convertDeployment("api", svc, nil, RenderOptions{Namespace: "default"})
+	m := convertDeployment("api", svc, testPlan(t, "api", svc, nil), RenderOptions{Namespace: "default"})
 	d := m.Object.(Deployment)
 	inits := d.Spec.Template.Spec.InitContainers
 	if len(inits) != 1 {
@@ -191,7 +191,7 @@ func TestConvertDeployment_Volumes(t *testing.T) {
 		Volumes: []string{"db-data:/var/lib/postgresql/data"},
 	}
 	compVols := map[string]eval.Volume{"db-data": {}}
-	m := convertDeployment("db", svc, compVols, RenderOptions{Namespace: "default"})
+	m := convertDeployment("db", svc, testPlan(t, "db", svc, compVols), RenderOptions{Namespace: "default"})
 	d := m.Object.(Deployment)
 	c := d.Spec.Template.Spec.Containers[0]
 	if len(c.VolumeMounts) != 1 {
@@ -209,19 +209,19 @@ func TestConvertDeployment_Volumes(t *testing.T) {
 	}
 }
 
-func TestConvertDeployment_HostPathVolume(t *testing.T) {
+func TestConvertDeployment_HostPathVolume_EmptyDirPolicy(t *testing.T) {
 	svc := eval.Service{
 		Image:   "nginx",
 		Volumes: []string{"/data:/data"},
 	}
-	m := convertDeployment("web", svc, nil, RenderOptions{Namespace: "default"})
+	m := convertDeployment("web", svc, testPlan(t, "web", svc, nil), RenderOptions{Namespace: "default"})
 	d := m.Object.(Deployment)
 	podVols := d.Spec.Template.Spec.Volumes
 	if len(podVols) != 1 {
 		t.Fatalf("expected 1 pod volume, got %d", len(podVols))
 	}
 	if podVols[0].EmptyDir == nil {
-		t.Error("expected emptyDir for host path volume")
+		t.Error("expected emptyDir for host path volume under the empty-dir policy")
 	}
 }
 
@@ -234,7 +234,7 @@ func TestConvertDeployment_EnvFrom(t *testing.T) {
 			},
 		},
 	}
-	m := convertDeployment("api", svc, nil, RenderOptions{Namespace: "default"})
+	m := convertDeployment("api", svc, testPlan(t, "api", svc, nil), RenderOptions{Namespace: "default"})
 	d := m.Object.(Deployment)
 	c := d.Spec.Template.Spec.Containers[0]
 	if len(c.EnvFrom) != 1 {
@@ -247,7 +247,7 @@ func TestConvertDeployment_EnvFrom(t *testing.T) {
 
 func TestConvertDeployment_Labels(t *testing.T) {
 	svc := eval.Service{Image: "nginx"}
-	m := convertDeployment("web", svc, nil, RenderOptions{Namespace: "default"})
+	m := convertDeployment("web", svc, testPlan(t, "web", svc, nil), RenderOptions{Namespace: "default"})
 	d := m.Object.(Deployment)
 	if d.Metadata.Labels["app.kubernetes.io/name"] != "web" {
 		t.Errorf("missing app.kubernetes.io/name label")
@@ -266,7 +266,7 @@ func TestConvertDeployment_SortedEnvVars(t *testing.T) {
 			"M_VAR": "m",
 		},
 	}
-	m := convertDeployment("app", svc, nil, RenderOptions{Namespace: "default"})
+	m := convertDeployment("app", svc, testPlan(t, "app", svc, nil), RenderOptions{Namespace: "default"})
 	d := m.Object.(Deployment)
 	envs := d.Spec.Template.Spec.Containers[0].Env
 	if len(envs) != 3 {
@@ -279,7 +279,7 @@ func TestConvertDeployment_SortedEnvVars(t *testing.T) {
 
 func TestConvertDeployment_WorkingDir(t *testing.T) {
 	svc := eval.Service{Image: "node", WorkingDir: "/app"}
-	m := convertDeployment("api", svc, nil, RenderOptions{Namespace: "default"})
+	m := convertDeployment("api", svc, testPlan(t, "api", svc, nil), RenderOptions{Namespace: "default"})
 	d := m.Object.(Deployment)
 	if d.Spec.Template.Spec.Containers[0].WorkingDir != "/app" {
 		t.Errorf("workingDir = %q, want /app", d.Spec.Template.Spec.Containers[0].WorkingDir)
@@ -304,25 +304,6 @@ func TestParseVolumeString(t *testing.T) {
 			if s != tt.source || d != tt.dest || ro != tt.readOnly {
 				t.Errorf("parseVolumeString(%q) = (%q, %q, %v), want (%q, %q, %v)",
 					tt.input, s, d, ro, tt.source, tt.dest, tt.readOnly)
-			}
-		})
-	}
-}
-
-func TestSanitizeVolumeName(t *testing.T) {
-	tests := []struct {
-		input string
-		want  string
-	}{
-		{"db-data", "db-data"},
-		{"/var/lib/data", "var-lib-data"},
-		{"/data", "data"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			got := sanitizeVolumeName(tt.input)
-			if got != tt.want {
-				t.Errorf("sanitizeVolumeName(%q) = %q, want %q", tt.input, got, tt.want)
 			}
 		})
 	}
@@ -360,7 +341,7 @@ func TestConvertContainerPorts_Empty(t *testing.T) {
 
 func TestConvertDeployment_RestartPolicyOmitted(t *testing.T) {
 	svc := eval.Service{Image: "nginx:latest"}
-	m := convertDeployment("web", svc, nil, RenderOptions{Namespace: "default"})
+	m := convertDeployment("web", svc, testPlan(t, "web", svc, nil), RenderOptions{Namespace: "default"})
 	d := m.Object.(Deployment)
 	if d.Spec.Template.Spec.RestartPolicy != "" {
 		t.Errorf("restartPolicy = %q, want empty (omitted)", d.Spec.Template.Spec.RestartPolicy)

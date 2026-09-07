@@ -5,10 +5,9 @@ import (
 )
 
 // convertJob converts a named service to a K8s Job manifest.
-func convertJob(name string, svc eval.Service, compVolumes map[string]eval.Volume, opts RenderOptions) Manifest {
+func convertJob(name string, svc eval.Service, plan *volumePlan, opts RenderOptions) Manifest {
 	labels := standardLabels(name)
-	containers := []Container{buildMainContainer(name, svc, opts)}
-	podVolumes := convertPodVolumes(svc.Volumes, compVolumes)
+	containers := []Container{buildMainContainer(name, svc, plan, opts)}
 
 	restartPolicy := "Never"
 	if svc.Restart == "on-failure" {
@@ -23,9 +22,9 @@ func convertJob(name string, svc eval.Service, compVolumes map[string]eval.Volum
 				Metadata: ObjectMeta{Labels: labels},
 				Spec: PodSpec{
 					RestartPolicy:  restartPolicy,
-					InitContainers: convertInitContainers(svc),
+					InitContainers: convertInitContainers(svc, plan),
 					Containers:     containers,
-					Volumes:        podVolumes,
+					Volumes:        plan.podVolumes,
 				},
 			},
 		},

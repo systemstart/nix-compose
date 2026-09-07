@@ -58,7 +58,7 @@ func TestConvert_FullM3(t *testing.T) {
 		},
 	}
 
-	manifests := Convert(comp, secrets, RenderOptions{Namespace: "default"})
+	manifests := mustConvert(t, comp, secrets, RenderOptions{Namespace: "default"})
 
 	if len(manifests) < 7 {
 		t.Fatalf("expected at least 7 manifests, got %d", len(manifests))
@@ -82,7 +82,7 @@ func TestConvert_FullM3(t *testing.T) {
 
 func TestConvert_Minimal(t *testing.T) {
 	comp := loadJSONFixture(t, "minimal.json")
-	manifests := Convert(comp, nil, RenderOptions{})
+	manifests := mustConvert(t, comp, nil, RenderOptions{})
 
 	// 1 Deployment + 1 Service (web has ports).
 	if len(manifests) != 2 {
@@ -102,8 +102,8 @@ func TestConvert_DeterministicOrder(t *testing.T) {
 		"api": {"KEY": "val"},
 	}
 
-	m1 := Convert(comp, secrets, RenderOptions{Namespace: "default"})
-	m2 := Convert(comp, secrets, RenderOptions{Namespace: "default"})
+	m1 := mustConvert(t, comp, secrets, RenderOptions{Namespace: "default"})
+	m2 := mustConvert(t, comp, secrets, RenderOptions{Namespace: "default"})
 
 	if len(m1) != len(m2) {
 		t.Fatalf("manifest count differs: %d vs %d", len(m1), len(m2))
@@ -118,7 +118,7 @@ func TestConvert_DeterministicOrder(t *testing.T) {
 
 func TestConvert_CustomNamespace(t *testing.T) {
 	comp := loadJSONFixture(t, "minimal.json")
-	manifests := Convert(comp, nil, RenderOptions{Namespace: "production"})
+	manifests := mustConvert(t, comp, nil, RenderOptions{Namespace: "production"})
 
 	d := manifests[0].Object.(Deployment)
 	if d.Metadata.Namespace != "production" {
@@ -128,7 +128,7 @@ func TestConvert_CustomNamespace(t *testing.T) {
 
 func TestConvert_InitContainersNative(t *testing.T) {
 	comp := loadJSONFixture(t, "full-m3.json")
-	manifests := Convert(comp, nil, RenderOptions{Namespace: "default"})
+	manifests := mustConvert(t, comp, nil, RenderOptions{Namespace: "default"})
 
 	// Find api deployment.
 	var apiDeploy *Deployment
@@ -162,7 +162,7 @@ func TestConvert_FullM3_GoldenFile(t *testing.T) {
 		},
 	}
 
-	manifests := Convert(comp, secrets, RenderOptions{Namespace: "default"})
+	manifests := mustConvert(t, comp, secrets, RenderOptions{Namespace: "default"})
 	var buf bytes.Buffer
 	if err := WriteMultiDoc(&buf, manifests); err != nil {
 		t.Fatalf("WriteMultiDoc: %v", err)
@@ -192,7 +192,7 @@ func TestConvert_FullM3_GoldenFile(t *testing.T) {
 func TestConvert_Minimal_GoldenFile(t *testing.T) {
 	comp := loadJSONFixture(t, "minimal.json")
 
-	manifests := Convert(comp, nil, RenderOptions{Namespace: "default"})
+	manifests := mustConvert(t, comp, nil, RenderOptions{Namespace: "default"})
 	var buf bytes.Buffer
 	if err := WriteMultiDoc(&buf, manifests); err != nil {
 		t.Fatalf("WriteMultiDoc: %v", err)
@@ -225,7 +225,7 @@ func TestConvert_OutputContainsAllFeatures(t *testing.T) {
 		"api": {"API_KEY": "secret123"},
 	}
 
-	manifests := Convert(comp, secrets, RenderOptions{Namespace: "default"})
+	manifests := mustConvert(t, comp, secrets, RenderOptions{Namespace: "default"})
 	var buf bytes.Buffer
 	if err := WriteMultiDoc(&buf, manifests); err != nil {
 		t.Fatalf("WriteMultiDoc: %v", err)
@@ -261,7 +261,7 @@ func TestConvert_RestartNo_ProducesJob(t *testing.T) {
 			},
 		},
 	}
-	manifests := Convert(comp, nil, RenderOptions{Namespace: "default"})
+	manifests := mustConvert(t, comp, nil, RenderOptions{Namespace: "default"})
 
 	types := countManifestTypes(manifests)
 	if types["Job"] != 1 {
@@ -286,7 +286,7 @@ func TestConvert_RestartOnFailure_ProducesJob(t *testing.T) {
 			},
 		},
 	}
-	manifests := Convert(comp, nil, RenderOptions{Namespace: "default"})
+	manifests := mustConvert(t, comp, nil, RenderOptions{Namespace: "default"})
 
 	types := countManifestTypes(manifests)
 	if types["Job"] != 1 {
@@ -309,7 +309,7 @@ func TestConvert_JobDoesNotEmitService(t *testing.T) {
 			},
 		},
 	}
-	manifests := Convert(comp, nil, RenderOptions{Namespace: "default"})
+	manifests := mustConvert(t, comp, nil, RenderOptions{Namespace: "default"})
 
 	types := countManifestTypes(manifests)
 	if types["Service"] != 0 {

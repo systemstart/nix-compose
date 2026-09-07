@@ -1,23 +1,85 @@
 package k8s
 
 import (
+	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/systemstart/nix-compose/pkg/eval"
 )
 
+// UnrepresentableMountError reports every bind mount a render refused, so
+// one run names all of them rather than one per run.
+type UnrepresentableMountError struct {
+	Refusals []error
+}
+
+func (e *UnrepresentableMountError) Error() string {
+	var b strings.Builder
+	if len(e.Refusals) == 1 {
+		b.WriteString("1 bind mount has no Kubernetes equivalent:")
+	} else {
+		fmt.Fprintf(&b, "%d bind mounts have no Kubernetes equivalent:", len(e.Refusals))
+	}
+	for _, r := range e.Refusals {
+		b.WriteString("\n  - ")
+		b.WriteString(r.Error())
+	}
+	return b.String()
+}
+
+// Unwrap exposes the individual refusals to errors.Is and errors.As.
+func (e *UnrepresentableMountError) Unwrap() []error { return e.Refusals }
+
 // Convert transforms a Composition and resolved secrets into K8s manifests.
-// Output ordering is deterministic: Secrets, PVCs, then (Deployment + Service) per service name.
-func Convert(comp *eval.Composition, resolvedSecrets map[string]map[string]string, opts RenderOptions) []Manifest {
+// Output ordering is deterministic: Secrets, ConfigMaps, PVCs, then
+// (Deployment + Service) per service name.
+//
+// It fails when a service bind-mounts a host path that has no K8s
+// equivalent, unless opts.UnrepresentableMounts says otherwise.
+func Convert(comp *eval.Composition, resolvedSecrets map[string]map[string]string, opts RenderOptions) (*Result, error) {
 	if opts.Namespace == "" {
 		opts.Namespace = "default"
+	}
+	if opts.ProjectDir == "" {
+		opts.ProjectDir = "."
+	}
+
+	plans, warnings, err := planCompositionVolumes(comp, opts)
+	if err != nil {
+		return nil, err
 	}
 
 	var manifests []Manifest
 	manifests = append(manifests, convertSecrets(comp, resolvedSecrets, opts)...)
+	manifests = append(manifests, convertConfigMaps(comp, plans)...)
 	manifests = append(manifests, convertPVCs(comp, opts)...)
-	manifests = append(manifests, convertWorkloads(comp, opts)...)
-	return manifests
+	manifests = append(manifests, convertWorkloads(comp, plans, opts)...)
+	return &Result{Manifests: manifests, Warnings: warnings}, nil
+}
+
+// planCompositionVolumes resolves the volumes of every service up front, so
+// a service that cannot be represented fails the render before any manifest
+// is written.
+func planCompositionVolumes(comp *eval.Composition, opts RenderOptions) (map[string]*volumePlan, []string, error) {
+	volumes := comp.Volumes
+	if volumes == nil {
+		volumes = make(map[string]eval.Volume)
+	}
+
+	plans := make(map[string]*volumePlan, len(comp.Services))
+	var warnings []string
+	var refusals []error
+	for _, name := range sortedServiceNames(comp) {
+		plan := planVolumes(name, comp.Services[name], volumes, opts)
+		plans[name] = plan
+		warnings = append(warnings, plan.warnings...)
+		refusals = append(refusals, plan.refusals...)
+	}
+	if len(refusals) > 0 {
+		return nil, nil, &UnrepresentableMountError{Refusals: refusals}
+	}
+	return plans, warnings, nil
 }
 
 // convertSecrets produces Secret manifests for services with resolved envFrom.
@@ -27,6 +89,18 @@ func convertSecrets(comp *eval.Composition, resolvedSecrets map[string]map[strin
 	for _, name := range names {
 		if m := convertSecret(name, resolvedSecrets[name], opts); m != nil {
 			manifests = append(manifests, *m)
+		}
+	}
+	return manifests
+}
+
+// convertConfigMaps produces the ConfigMap manifests generated for
+// bind-mounted files, in service order.
+func convertConfigMaps(comp *eval.Composition, plans map[string]*volumePlan) []Manifest {
+	var manifests []Manifest
+	for _, name := range sortedServiceNames(comp) {
+		for _, cm := range plans[name].configMaps {
+			manifests = append(manifests, Manifest{Object: cm, Filename: cm.Metadata.Name + "-configmap.yaml"})
 		}
 	}
 	return manifests
@@ -43,20 +117,16 @@ func convertPVCs(comp *eval.Composition, opts RenderOptions) []Manifest {
 }
 
 // convertWorkloads produces Deployment/Job and optional Service manifests per service.
-func convertWorkloads(comp *eval.Composition, opts RenderOptions) []Manifest {
+func convertWorkloads(comp *eval.Composition, plans map[string]*volumePlan, opts RenderOptions) []Manifest {
 	names := sortedServiceNames(comp)
-	volumes := comp.Volumes
-	if volumes == nil {
-		volumes = make(map[string]eval.Volume)
-	}
 
 	var manifests []Manifest
 	for _, name := range names {
 		svc := comp.Services[name]
 		if isJobService(svc) {
-			manifests = append(manifests, convertJob(name, svc, volumes, opts))
+			manifests = append(manifests, convertJob(name, svc, plans[name], opts))
 		} else {
-			manifests = append(manifests, convertDeployment(name, svc, volumes, opts))
+			manifests = append(manifests, convertDeployment(name, svc, plans[name], opts))
 			if m := convertK8sService(name, svc, opts); m != nil {
 				manifests = append(manifests, *m)
 			}

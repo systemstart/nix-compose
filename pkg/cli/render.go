@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 
@@ -14,10 +15,11 @@ import (
 )
 
 var (
-	renderTarget    string
-	renderOutput    string
-	renderNamespace string
-	renderDryRun    bool
+	renderTarget          string
+	renderOutput          string
+	renderNamespace       string
+	renderDryRun          bool
+	renderUnrepresentable string
 )
 
 var renderCmd = &cobra.Command{
@@ -32,6 +34,8 @@ func init() {
 	renderCmd.Flags().StringVar(&renderOutput, "output", "", "write individual files to directory (default: stdout)")
 	renderCmd.Flags().StringVar(&renderNamespace, "namespace", "default", "Kubernetes namespace")
 	renderCmd.Flags().BoolVar(&renderDryRun, "dry-run", false, "validate via kubectl apply --dry-run=client")
+	renderCmd.Flags().StringVar(&renderUnrepresentable, "unrepresentable-mounts", string(k8s.MountPolicyError),
+		"handling of bind mounts with no K8s equivalent: error|empty-dir")
 }
 
 func runRender(_ *cobra.Command, _ []string) error {
@@ -54,10 +58,49 @@ func renderK8s(ctx context.Context, dir string) error {
 
 	printResourceWarnings(comp)
 
-	opts := k8s.RenderOptions{Namespace: renderNamespace}
-	manifests := k8s.Convert(comp, secrets, opts)
+	policy, err := mountPolicy(renderUnrepresentable)
+	if err != nil {
+		return err
+	}
 
-	return outputManifests(ctx, manifests)
+	opts := k8s.RenderOptions{
+		Namespace:             renderNamespace,
+		ProjectDir:            dir,
+		UnrepresentableMounts: policy,
+	}
+	result, err := k8s.Convert(comp, secrets, opts)
+	if err != nil {
+		return renderError(err)
+	}
+	for _, w := range result.Warnings {
+		fmt.Printf("Warning: %s\n", w)
+	}
+
+	return outputManifests(ctx, result.Manifests)
+}
+
+// renderError annotates a conversion failure, pointing an unrepresentable
+// mount at the flag that renders it anyway.
+func renderError(err error) error {
+	var unrepresentable *k8s.UnrepresentableMountError
+	if errors.As(err, &unrepresentable) {
+		return fmt.Errorf("rendering manifests: %w\n\nRe-run with --unrepresentable-mounts=%s to render these as empty "+
+			"directories instead; each container then starts without that path", err, k8s.MountPolicyEmptyDir)
+	}
+	return fmt.Errorf("rendering manifests: %w", err)
+}
+
+// mountPolicy parses the --unrepresentable-mounts flag.
+func mountPolicy(value string) (k8s.MountPolicy, error) {
+	switch k8s.MountPolicy(value) {
+	case k8s.MountPolicyError:
+		return k8s.MountPolicyError, nil
+	case k8s.MountPolicyEmptyDir:
+		return k8s.MountPolicyEmptyDir, nil
+	default:
+		return "", fmt.Errorf("unsupported --unrepresentable-mounts %q (supported: %s, %s)",
+			value, k8s.MountPolicyError, k8s.MountPolicyEmptyDir)
+	}
 }
 
 // evalAndFilter runs Nix evaluation and profile filtering.

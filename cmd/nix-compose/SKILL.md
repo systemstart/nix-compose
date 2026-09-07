@@ -51,7 +51,16 @@ nix-compose render --target k8s --namespace production
 
 # Render and validate with kubectl
 nix-compose render --target k8s --dry-run
+
+# Keep rendering when a bind mount has no K8s equivalent (warns per mount)
+nix-compose render --target k8s --unrepresentable-mounts empty-dir
 ```
+
+A bind-mounted file (`./conf/app.yml:/etc/app.yml`) renders as a generated
+ConfigMap mounted with `subPath`. A bind mount with no K8s equivalent — a
+directory, a path outside the project, a binary or missing file — fails the
+render and names the service and the volume, rather than emitting an empty
+directory the container would start without.
 
 ## Configuration Structure
 

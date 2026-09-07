@@ -128,14 +128,21 @@ type HTTPGetAction struct {
 type VolumeMount struct {
 	Name      string `yaml:"name"`
 	MountPath string `yaml:"mountPath"`
+	SubPath   string `yaml:"subPath,omitempty"`
 	ReadOnly  bool   `yaml:"readOnly,omitempty"`
 }
 
 // PodVolume represents a named volume attached to a pod.
 type PodVolume struct {
-	Name                  string                `yaml:"name"`
-	PersistentVolumeClaim *PVCVolumeSource      `yaml:"persistentVolumeClaim,omitempty"`
-	EmptyDir              *EmptyDirVolumeSource `yaml:"emptyDir,omitempty"`
+	Name                  string                 `yaml:"name"`
+	PersistentVolumeClaim *PVCVolumeSource       `yaml:"persistentVolumeClaim,omitempty"`
+	ConfigMap             *ConfigMapVolumeSource `yaml:"configMap,omitempty"`
+	EmptyDir              *EmptyDirVolumeSource  `yaml:"emptyDir,omitempty"`
+}
+
+// ConfigMapVolumeSource references a ConfigMap to expose as a volume.
+type ConfigMapVolumeSource struct {
+	Name string `yaml:"name"`
 }
 
 // PVCVolumeSource references a PersistentVolumeClaim.
@@ -174,6 +181,13 @@ type Secret struct {
 	StringData map[string]string `yaml:"stringData"`
 }
 
+// ConfigMap represents a K8s ConfigMap resource.
+type ConfigMap struct {
+	TypeMeta `yaml:",inline"`
+	Metadata ObjectMeta        `yaml:"metadata"`
+	Data     map[string]string `yaml:"data,omitempty"`
+}
+
 // PersistentVolumeClaim represents a K8s PVC resource.
 type PersistentVolumeClaim struct {
 	TypeMeta `yaml:",inline"`
@@ -205,7 +219,35 @@ type Manifest struct {
 	Filename string
 }
 
+// MountPolicy decides what rendering does with a bind mount that the K8s
+// target cannot represent faithfully.
+type MountPolicy string
+
+const (
+	// MountPolicyError refuses to render, naming the service and the volume.
+	// This is the default: a bind mount with nothing behind it fails at
+	// container start, long after the manifest looked correct.
+	MountPolicyError MountPolicy = "error"
+	// MountPolicyEmptyDir emits an empty directory and reports a warning,
+	// which is what nix-compose did unconditionally before v0.4.0.
+	MountPolicyEmptyDir MountPolicy = "empty-dir"
+)
+
 // RenderOptions holds configuration for the K8s rendering pipeline.
 type RenderOptions struct {
 	Namespace string
+	// ProjectDir is the directory relative bind-mount sources resolve
+	// against, and the boundary a source has to stay inside to be read.
+	// Defaults to ".".
+	ProjectDir string
+	// UnrepresentableMounts selects the handling of bind mounts that have no
+	// K8s equivalent. The zero value is MountPolicyError.
+	UnrepresentableMounts MountPolicy
+}
+
+// Result carries the manifests Convert produced, plus the diagnostics it
+// raised without failing.
+type Result struct {
+	Manifests []Manifest
+	Warnings  []string
 }

@@ -205,6 +205,51 @@ local run.
 
 **Workaround:** none currently. Treat the values as manifest input.
 
+### Bind mounts become ConfigMaps, or are refused
+
+A service that bind-mounts a file (`./conf/app.yml:/etc/app.yml`) renders to
+a generated ConfigMap mounted with `subPath`. That covers a configuration
+file and nothing else. Rendering **fails**, naming the service and the
+volume, when the source is a directory, lies outside the project directory,
+is missing, is not valid UTF-8, or exceeds the 1 MiB ConfigMap limit
+(ADR-026).
+
+There is deliberately no `hostPath` fallback: it would tie the Deployment to
+a path on whichever node the pod lands on.
+
+Before v0.4.0 every one of these rendered as `emptyDir: {}` under a volume
+name that was not a valid RFC 1123 label — the manifest was rejected by the
+API server, and would have started a container without its configuration had
+it been accepted.
+
+**Workaround:** `--unrepresentable-mounts=empty-dir` restores the old
+behaviour with a warning per affected mount, for a project migrating off it.
+For a directory of configuration, write the ConfigMap by hand and patch the
+Deployment in an overlay; for a data directory, declare a named volume.
+
+### A generated ConfigMap is not a Secret
+
+The content of a bind-mounted file is copied verbatim into the rendered
+ConfigMap, whatever it is. Mounting a TLS private key or a credentials file
+puts that material in plain text into the manifest — and into version
+control, if the rendered output is committed.
+
+A file whose content carries a PEM private key header is reported as a
+warning naming the service, the volume and the ConfigMap. Nothing else is
+detected: a token in a YAML config looks like configuration.
+
+**Workaround:** mount secret material from a `Secret` you manage, patched in
+via an overlay, rather than from a bind mount.
+
+### One ConfigMap per service, not per file
+
+The same file bind-mounted into two services generates two ConfigMaps, one
+per service, rather than a shared resource. This keeps each ConfigMap's
+lifetime tied to a single Deployment, at the cost of duplicated content.
+
+**Workaround:** none needed for correctness. Replace both with a hand-written
+shared ConfigMap in an overlay if the duplication matters.
+
 ### No Ingress generation
 
 `render --target k8s` does not generate `Ingress` or `IngressRoute`

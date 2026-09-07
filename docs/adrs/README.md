@@ -8,8 +8,9 @@ ADRs 001–008 cover the container runtime layer: how services map onto CRI
 primitives, networking, restart policies, health probes, state and logs.
 ADRs 009–020 cover the orchestrate engine — the daemonless plan/apply loop,
 its privilege model, typed resources, state store and gRPC API. ADRs
-021–023 cover the microVM runtime, and 024–025 the YAML project format and
-the migration tooling that reads a `docker-compose.yaml`.
+021–023 cover the microVM runtime, 024–025 the YAML project format and
+the migration tooling that reads a `docker-compose.yaml`, and 026 the K8s
+render target's handling of bind mounts.
 
 ## Index
 
@@ -40,3 +41,4 @@ the migration tooling that reads a `docker-compose.yaml`.
 | [023](023-microvm-port-forwarding.md) | MicroVM Port Forwarding | Accepted |
 | [024](024-yaml-project-format.md) | YAML project format | Accepted |
 | [025](025-compose-import-and-suggest.md) | Compose import and package suggestion | Accepted |
+| [026](026-bind-mounts-in-the-k8s-target.md) | Bind mounts in the K8s render target | Accepted |

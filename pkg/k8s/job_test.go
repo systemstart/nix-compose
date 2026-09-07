@@ -11,7 +11,7 @@ func TestConvertJob_RestartNo(t *testing.T) {
 		Image:   "flyway:latest",
 		Restart: "no",
 	}
-	m := convertJob("init-db", svc, nil, RenderOptions{Namespace: "test-ns"})
+	m := convertJob("init-db", svc, testPlan(t, "init-db", svc, nil), RenderOptions{Namespace: "test-ns"})
 
 	job, ok := m.Object.(Job)
 	if !ok {
@@ -42,7 +42,7 @@ func TestConvertJob_RestartOnFailure(t *testing.T) {
 		Image:   "worker:latest",
 		Restart: "on-failure",
 	}
-	m := convertJob("worker", svc, nil, RenderOptions{Namespace: "default"})
+	m := convertJob("worker", svc, testPlan(t, "worker", svc, nil), RenderOptions{Namespace: "default"})
 
 	job := m.Object.(Job)
 	if job.Spec.Template.Spec.RestartPolicy != "OnFailure" {
@@ -52,7 +52,7 @@ func TestConvertJob_RestartOnFailure(t *testing.T) {
 
 func TestConvertJob_Labels(t *testing.T) {
 	svc := eval.Service{Image: "busybox", Restart: "no"}
-	m := convertJob("task", svc, nil, RenderOptions{Namespace: "default"})
+	m := convertJob("task", svc, testPlan(t, "task", svc, nil), RenderOptions{Namespace: "default"})
 
 	job := m.Object.(Job)
 	if job.Metadata.Labels["app.kubernetes.io/name"] != "task" {
@@ -74,7 +74,7 @@ func TestConvertJob_Volumes(t *testing.T) {
 		Volumes: []string{"data:/mnt/data"},
 	}
 	compVols := map[string]eval.Volume{"data": {}}
-	m := convertJob("task", svc, compVols, RenderOptions{Namespace: "default"})
+	m := convertJob("task", svc, testPlan(t, "task", svc, compVols), RenderOptions{Namespace: "default"})
 
 	job := m.Object.(Job)
 	if len(job.Spec.Template.Spec.Volumes) != 1 {
@@ -103,7 +103,7 @@ func TestConvertJob_InitContainers(t *testing.T) {
 			},
 		},
 	}
-	m := convertJob("task", svc, nil, RenderOptions{Namespace: "default"})
+	m := convertJob("task", svc, testPlan(t, "task", svc, nil), RenderOptions{Namespace: "default"})
 
 	job := m.Object.(Job)
 	if len(job.Spec.Template.Spec.InitContainers) != 1 {

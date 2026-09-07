@@ -9,10 +9,9 @@ import (
 )
 
 // convertDeployment converts a named service to a K8s Deployment manifest.
-func convertDeployment(name string, svc eval.Service, compVolumes map[string]eval.Volume, opts RenderOptions) Manifest {
+func convertDeployment(name string, svc eval.Service, plan *volumePlan, opts RenderOptions) Manifest {
 	labels := standardLabels(name)
-	containers := []Container{buildMainContainer(name, svc, opts)}
-	podVolumes := convertPodVolumes(svc.Volumes, compVolumes)
+	containers := []Container{buildMainContainer(name, svc, plan, opts)}
 
 	deploy := Deployment{
 		TypeMeta: TypeMeta{APIVersion: "apps/v1", Kind: "Deployment"},
@@ -23,9 +22,9 @@ func convertDeployment(name string, svc eval.Service, compVolumes map[string]eva
 			Template: PodTemplateSpec{
 				Metadata: ObjectMeta{Labels: labels},
 				Spec: PodSpec{
-					InitContainers: convertInitContainers(svc),
+					InitContainers: convertInitContainers(svc, plan),
 					Containers:     containers,
-					Volumes:        podVolumes,
+					Volumes:        plan.podVolumes,
 				},
 			},
 		},
@@ -34,7 +33,7 @@ func convertDeployment(name string, svc eval.Service, compVolumes map[string]eva
 }
 
 // buildMainContainer assembles the primary container for a Deployment.
-func buildMainContainer(name string, svc eval.Service, opts RenderOptions) Container {
+func buildMainContainer(name string, svc eval.Service, plan *volumePlan, opts RenderOptions) Container {
 	c := Container{
 		Name:       name,
 		Image:      svc.Image,
@@ -46,7 +45,7 @@ func buildMainContainer(name string, svc eval.Service, opts RenderOptions) Conta
 	}
 	setProbes(&c, svc)
 	setEnvFrom(&c, name, svc, opts)
-	c.VolumeMounts = convertVolumeMounts(svc.Volumes)
+	c.VolumeMounts = plan.mountsFor(svc.Volumes)
 	return c
 }
 
@@ -204,7 +203,7 @@ func setEnvFrom(c *Container, name string, svc eval.Service, _ RenderOptions) {
 }
 
 // convertInitContainers converts eval init containers to K8s native init containers.
-func convertInitContainers(svc eval.Service) []Container {
+func convertInitContainers(svc eval.Service, plan *volumePlan) []Container {
 	if svc.XNixCompose == nil || len(svc.XNixCompose.InitContainers) == 0 {
 		return nil
 	}
@@ -216,80 +215,8 @@ func convertInitContainers(svc eval.Service) []Container {
 			Command: ic.Command.Parts,
 			Env:     convertEnvVars(ic.Environment),
 		}
-		c.VolumeMounts = convertVolumeMounts(ic.Volumes)
+		c.VolumeMounts = plan.mountsFor(ic.Volumes)
 		inits = append(inits, c)
 	}
 	return inits
-}
-
-// convertVolumeMounts parses compose volume strings into K8s VolumeMounts.
-func convertVolumeMounts(volumes []string) []VolumeMount {
-	if len(volumes) == 0 {
-		return nil
-	}
-	mounts := make([]VolumeMount, 0, len(volumes))
-	for _, vol := range volumes {
-		source, dest, readOnly := parseVolumeString(vol)
-		if dest == "" {
-			continue
-		}
-		mounts = append(mounts, VolumeMount{
-			Name:      sanitizeVolumeName(source),
-			MountPath: dest,
-			ReadOnly:  readOnly,
-		})
-	}
-	return mounts
-}
-
-// convertPodVolumes converts compose volume strings to K8s pod volumes.
-func convertPodVolumes(volumes []string, compVolumes map[string]eval.Volume) []PodVolume {
-	if len(volumes) == 0 {
-		return nil
-	}
-	seen := make(map[string]bool)
-	podVols := make([]PodVolume, 0, len(volumes))
-	for _, vol := range volumes {
-		source, _, _ := parseVolumeString(vol)
-		volName := sanitizeVolumeName(source)
-		if seen[volName] {
-			continue
-		}
-		seen[volName] = true
-
-		pv := PodVolume{Name: volName}
-		if _, isNamed := compVolumes[source]; isNamed {
-			pv.PersistentVolumeClaim = &PVCVolumeSource{ClaimName: source}
-		} else {
-			pv.EmptyDir = &EmptyDirVolumeSource{}
-		}
-		podVols = append(podVols, pv)
-	}
-	return podVols
-}
-
-// parseVolumeString parses a compose volume string "source:dest[:ro]".
-func parseVolumeString(vol string) (source, dest string, readOnly bool) {
-	parts := strings.SplitN(vol, ":", 3)
-	switch len(parts) {
-	case 1:
-		return parts[0], parts[0], false
-	case 2: //nolint:mnd // source:dest
-		return parts[0], parts[1], false
-	default:
-		return parts[0], parts[1], parts[2] == "ro"
-	}
-}
-
-// sanitizeVolumeName converts a path or volume name into a valid K8s volume name.
-func sanitizeVolumeName(s string) string {
-	// Named volumes are already valid; paths need sanitization.
-	if !strings.Contains(s, "/") {
-		return s
-	}
-	name := strings.ReplaceAll(strings.Trim(s, "/"), "/", "-")
-	if len(name) > 63 {
-		name = name[:63]
-	}
-	return name
 }

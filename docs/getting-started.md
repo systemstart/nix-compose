@@ -189,8 +189,8 @@ Only services whose configuration changed are restarted.
 
 ## Kubernetes manifests
 
-`render --target k8s` emits `Deployment`, `Service`, `Secret` and `PVC`
-manifests plus a `kustomization.yaml` from the same config:
+`render --target k8s` emits `Deployment`, `Service`, `Secret`, `ConfigMap`
+and `PVC` manifests plus a `kustomization.yaml` from the same config:
 
 ```sh
 nix-compose render --target k8s --output ./k8s/
@@ -201,6 +201,12 @@ pipeline — it is a one-way escape hatch. If you already deploy with
 Kustomize, Helm or Argo, keep doing that. Note that `x-nix-compose.resources`
 is emitted into the manifests but is not applied to locally running
 containers; see [limitations.md](limitations.md).
+
+A service that bind-mounts a configuration file gets a generated ConfigMap
+mounted with `subPath`. A bind mount with no Kubernetes equivalent — a
+directory, a path outside the project, a binary or missing file — fails the
+render and names the service and the volume;
+`--unrepresentable-mounts=empty-dir` downgrades that to a warning.
 
 ## Next steps
 
