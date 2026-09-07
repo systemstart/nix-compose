@@ -210,11 +210,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1787906838,
-        "narHash": "sha256-BVoCD5auserFdtRIvXkALWYtrFMrXJS/8JDsEEiH44Y=",
+        "lastModified": 1788301927,
+        "narHash": "sha256-Zmcvt5yW//YLT3HYe3bWN1Sf2txYrnBpa5jLULVokc0=",
         "owner": "purpleclay",
         "repo": "go-overlay",
-        "rev": "34bdca05fbef02ce7dd69873fbe45197d6fdd2c4",
+        "rev": "fe48ae4f56981f9f7c2bf03d4951fb0aa6e2095b",
         "type": "github"
       },
       "original": {
@@ -231,16 +231,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1788378508,
-        "narHash": "sha256-qXUOsbzOAvcGHqkpUObZZgPAv4N5QEAP+gQMl8p4sDU=",
+        "lastModified": 1788780141,
+        "narHash": "sha256-OrHa1WYtN/EjwP8t7uTSe/mvOE57WeFLudoWo/Po5Lg=",
         "owner": "systemstart",
         "repo": "nix-oci",
-        "rev": "d0f22c9b0db852cb32a5c463872b8dd122438393",
+        "rev": "2df53c7ac4766b13e0e9b3263310834f4b94eaf1",
         "type": "github"
       },
       "original": {
         "owner": "systemstart",
-        "ref": "v0.5.0",
+        "ref": "v0.6.0",
         "repo": "nix-oci",
         "type": "github"
       }
