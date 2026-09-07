@@ -266,7 +266,8 @@ func isNamedVolume(source string, compVolumes map[string]eval.Volume) bool {
 }
 
 // ParseVolumeMount parses a compose-style volume string into a CRI Mount.
-// Formats: "source:dest", "source:dest:ro", "dest" (anonymous — returns nil).
+// Formats: "source:dest", "source:dest:options", "dest" (anonymous —
+// returns nil).
 func ParseVolumeMount(vol, project string, compVolumes map[string]eval.Volume, resolve VolumeResolver) (*runtimev1.Mount, error) {
 	parts := strings.SplitN(vol, ":", 3)
 
@@ -277,7 +278,7 @@ func ParseVolumeMount(vol, project string, compVolumes map[string]eval.Volume, r
 
 	source := parts[0]
 	dest := parts[1]
-	readonly := len(parts) == 3 && parts[2] == "ro"
+	readonly := len(parts) == 3 && eval.MountOptionsReadOnly(parts[2])
 
 	switch {
 	case isHostPath(source):

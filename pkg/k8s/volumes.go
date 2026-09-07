@@ -318,6 +318,6 @@ func parseVolumeString(vol string) (source, dest string, readOnly bool) {
 	case 2: //nolint:mnd // source:dest
 		return parts[0], parts[1], false
 	default:
-		return parts[0], parts[1], parts[2] == "ro"
+		return parts[0], parts[1], eval.MountOptionsReadOnly(parts[2])
 	}
 }

@@ -508,6 +508,29 @@ func TestParseVolumeMount_BindAbsolute(t *testing.T) {
 	}
 }
 
+func TestParseVolumeMount_ReadOnlyAmongOtherOptions(t *testing.T) {
+	// "ro,z" is one option list, not the literal string "ro": comparing the
+	// whole field mounts the path read-write.
+	for _, options := range []string{"ro", "ro,z", "z,ro", "ro,Z,cached"} {
+		m, err := ParseVolumeMount("/host/path:/container:"+options, "proj", nil, nil)
+		if err != nil {
+			t.Fatalf("ParseVolumeMount(%q): %v", options, err)
+		}
+		if !m.Readonly {
+			t.Errorf("options %q gave Readonly=false, want true", options)
+		}
+	}
+	for _, options := range []string{"rw", "z", "rw,z"} {
+		m, err := ParseVolumeMount("/host/path:/container:"+options, "proj", nil, nil)
+		if err != nil {
+			t.Fatalf("ParseVolumeMount(%q): %v", options, err)
+		}
+		if m.Readonly {
+			t.Errorf("options %q gave Readonly=true, want false", options)
+		}
+	}
+}
+
 func TestParseVolumeMount_BindRelative(t *testing.T) {
 	m, err := ParseVolumeMount("./data:/app/data", "proj", nil, nil)
 	if err != nil {

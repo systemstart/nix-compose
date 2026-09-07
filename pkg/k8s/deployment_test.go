@@ -297,6 +297,9 @@ func TestParseVolumeString(t *testing.T) {
 		{"/host:/container:ro", "/host", "/container", true},
 		{"/single", "/single", "/single", false},
 		{"/data:/data:rw", "/data", "/data", false},
+		{"/host:/container:ro,z", "/host", "/container", true},
+		{"/host:/container:z,ro", "/host", "/container", true},
+		{"/host:/container:z", "/host", "/container", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
