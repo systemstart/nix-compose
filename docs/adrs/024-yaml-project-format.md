@@ -98,9 +98,12 @@ hash → new content-addressed reference). A top-level `nixpkgs:` key
 overrides the pin per project.
 
 This is not worse than compose's untagged `image: nginx`, but it *looks*
-more precise than it is. **A lock file is the intended resolution** and
-is not implemented yet — see the "YAML lock file" row in
-[ROADMAP.md](../../ROADMAP.md).
+more precise than it is. **A lock file is the intended resolution** and is
+not implemented yet: generating a flake in `.nix-compose/` and evaluating
+`nix eval path:…#composition` instead of `--expr` would make the evaluation
+pure and produce a `flake.lock` that pins `package:` per project rather than
+per nix-compose version. The two are one change, and `nix store add` does
+**not** substitute for it.
 
 **Evaluation is impure.** The generated expression needs `--impure` for
 one reason: it reads the embedded Nix sources by absolute path. Nothing

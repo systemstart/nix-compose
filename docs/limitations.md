@@ -42,7 +42,8 @@ services:
     package: nginx
 ```
 
-A generated lock file is the intended fix; see [ROADMAP.md](../ROADMAP.md).
+A generated lock file is the intended fix, and is not implemented yet; see
+[ADR-024](adrs/024-yaml-project-format.md).
 
 ### YAML evaluation is impure
 
