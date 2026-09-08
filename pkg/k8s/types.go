@@ -137,7 +137,14 @@ type PodVolume struct {
 	Name                  string                 `yaml:"name"`
 	PersistentVolumeClaim *PVCVolumeSource       `yaml:"persistentVolumeClaim,omitempty"`
 	ConfigMap             *ConfigMapVolumeSource `yaml:"configMap,omitempty"`
+	Secret                *SecretVolumeSource    `yaml:"secret,omitempty"`
 	EmptyDir              *EmptyDirVolumeSource  `yaml:"emptyDir,omitempty"`
+}
+
+// SecretVolumeSource references a Secret to expose as a volume. The Secret
+// is not emitted by the renderer — it names one the cluster already has.
+type SecretVolumeSource struct {
+	SecretName string `yaml:"secretName"`
 }
 
 // ConfigMapVolumeSource references a ConfigMap to expose as a volume.

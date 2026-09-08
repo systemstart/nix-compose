@@ -36,9 +36,16 @@ type volumePlan struct {
 	warnings   []string
 	refusals   []error
 	overrides  []string
+	// mustFix records that at least one refusal has no override — a
+	// mistake in the composition rather than a policy choice.
+	mustFix bool
 	// names maps an assigned volume name to the source that claimed it, so
 	// two sources that sanitize alike get distinct names.
 	names map[string]string
+	// secrets indexes the service's declared secret mounts by source, and
+	// usedSecrets records which of them matched a volume.
+	secrets     map[string]eval.SecretMount
+	usedSecrets map[string]bool
 }
 
 // planVolumes resolves every volume string of a service and its init
@@ -47,13 +54,42 @@ type volumePlan struct {
 // instead of one per run.
 func planVolumes(svcName string, svc eval.Service, compVolumes map[string]eval.Volume, opts RenderOptions) *volumePlan {
 	p := &volumePlan{
-		mounts: make(map[string]VolumeMount),
-		names:  make(map[string]string),
+		mounts:  make(map[string]VolumeMount),
+		names:   make(map[string]string),
+		secrets: secretMountsBySource(svc),
 	}
 	for _, vol := range serviceVolumeStrings(svc) {
 		p.add(svcName, vol, compVolumes, opts)
 	}
+	p.reportUnmatchedSecretMounts(svcName)
 	return p
+}
+
+// secretMountsBySource indexes a service's declared secret mounts by the
+// volume source they name.
+func secretMountsBySource(svc eval.Service) map[string]eval.SecretMount {
+	if svc.XNixCompose == nil || len(svc.XNixCompose.SecretMounts) == 0 {
+		return nil
+	}
+	bySource := make(map[string]eval.SecretMount, len(svc.XNixCompose.SecretMounts))
+	for _, sm := range svc.XNixCompose.SecretMounts {
+		bySource[sm.Source] = sm
+	}
+	return bySource
+}
+
+// reportUnmatchedSecretMounts refuses a declared secret mount whose source is
+// not one of the service's volumes. Silently ignoring it would fail open: the
+// mount it was meant to protect would render as content instead.
+func (p *volumePlan) reportUnmatchedSecretMounts(svcName string) {
+	for source, sm := range p.secrets {
+		if p.usedSecrets[source] {
+			continue
+		}
+		p.refuse(fmt.Errorf("service %q: x-nix-compose.secretMounts names source %q, which is not one of its "+
+			"volumes — the mount it was meant to cover would render as content; fix the path or drop the entry",
+			svcName, sm.Source), "")
+	}
 }
 
 // serviceVolumeStrings returns the service's own volume strings followed by
@@ -75,6 +111,10 @@ func (p *volumePlan) add(svcName, vol string, compVolumes map[string]eval.Volume
 	}
 	source, dest, readOnly := parseVolumeString(vol)
 	if dest == "" {
+		return
+	}
+	if sm, declared := p.secrets[source]; declared {
+		p.addSecretMount(vol, source, dest, sm)
 		return
 	}
 	if !isBindMount(source) {
@@ -102,6 +142,26 @@ func (p *volumePlan) addNamedVolume(vol, source, dest string, readOnly bool, com
 	}
 	p.addPodVolume(pv)
 	p.mounts[vol] = VolumeMount{Name: name, MountPath: dest, ReadOnly: readOnly}
+}
+
+// addSecretMount plans a mount the cluster supplies from an existing Secret.
+// The file is never read, so nothing about it reaches the manifest — not its
+// content, and not whether it exists on the machine doing the rendering.
+func (p *volumePlan) addSecretMount(vol, source, dest string, sm eval.SecretMount) {
+	if p.usedSecrets == nil {
+		p.usedSecrets = make(map[string]bool)
+	}
+	p.usedSecrets[source] = true
+
+	key := sm.Key
+	if key == "" {
+		key = configMapKey(filepath.Base(source))
+	}
+	name := p.claimName(sanitizeName(sm.SecretName), source)
+
+	p.addPodVolume(PodVolume{Name: name, Secret: &SecretVolumeSource{SecretName: sm.SecretName}})
+	// A Secret volume is read-only in the same way a ConfigMap one is.
+	p.mounts[vol] = VolumeMount{Name: name, MountPath: dest, SubPath: key, ReadOnly: true}
 }
 
 // addConfigMap plans a bind-mounted file as a generated ConfigMap mounted
@@ -150,6 +210,10 @@ func (p *volumePlan) allowSecretMaterial(svcName, vol, source, cmName string, op
 // anyway, so the caller can name the override that applies.
 func (p *volumePlan) refuse(err error, override string) {
 	p.refusals = append(p.refusals, err)
+	if override == "" {
+		p.mustFix = true
+		return
+	}
 	for _, o := range p.overrides {
 		if o == override {
 			return

@@ -142,11 +142,32 @@ type NixComposeExtended struct {
 	EnvFrom        []EnvFromSource `json:"envFrom,omitempty"`
 	InitContainers []InitContainer `json:"initContainers,omitempty"`
 	NamedPorts     []NamedPort     `json:"namedPorts,omitempty"`
+	SecretMounts   []SecretMount   `json:"secretMounts,omitempty"`
 	// ImageDrv is the derivation that produces this service's image, set by
 	// mkComposition when the service names a package instead of a registry
 	// tag. Evaluation yields the image's store path without building it, so
 	// this is what RealiseImages hands to Nix to produce the bytes.
 	ImageDrv string `json:"imageDrv,omitempty"`
+}
+
+// SecretMount marks one of a service's bind mounts as secret material that
+// the cluster supplies, rather than content to copy out of the project.
+//
+// `render --target k8s` emits a reference to a Secret that already exists —
+// no Secret manifest, and none of the file's bytes — so rendered output stays
+// safe to commit. Locally the bind mount is unaffected: `up` still mounts the
+// real file, which is why the mount is written normally and named here rather
+// than replaced.
+type SecretMount struct {
+	// Source is the volume's host path, matched against the service's own
+	// volume strings exactly as written.
+	Source string `json:"source"`
+	// SecretName is the Secret in the target namespace to mount from. It is
+	// not created here; whatever manages secrets in the cluster owns it.
+	SecretName string `json:"secretName"`
+	// Key is the Secret key to project, mounted with subPath. Defaults to
+	// the source's base name.
+	Key string `json:"key,omitempty"`
 }
 
 // ServiceInfo holds nix-compose service metadata.

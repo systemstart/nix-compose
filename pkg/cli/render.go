@@ -93,6 +93,13 @@ func renderK8s(ctx context.Context, dir string) error {
 func renderError(err error) error {
 	var refused *k8s.MountRefusalError
 	if errors.As(err, &refused) && len(refused.Overrides) > 0 {
+		if refused.MustFix {
+			// Offering the flags without this reads as "pass these and it
+			// renders", which is false when a refusal has no override.
+			return fmt.Errorf("rendering manifests: %w\n\nSome of these can be rendered anyway with: %s\n"+
+				"the rest are mistakes in the composition and have to be fixed",
+				err, strings.Join(refused.Overrides, " "))
+		}
 		return fmt.Errorf("rendering manifests: %w\n\nTo render these anyway, re-run with: %s",
 			err, strings.Join(refused.Overrides, " "))
 	}

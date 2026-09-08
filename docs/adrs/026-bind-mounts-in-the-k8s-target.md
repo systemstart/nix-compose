@@ -105,6 +105,32 @@ The refusals of both kinds are collected together and reported in one run,
 and the error names only the override flags that actually apply to what was
 refused.
 
+### Secret material is referenced, not generated
+
+`x-nix-compose.secretMounts` names a mount whose content the cluster
+supplies. It renders as `volumes[].secret.secretName` plus the usual
+`subPath`, and emits no `Secret` — the file is never read.
+
+Generating a `Secret` from the file was the shape originally requested, and
+it does not solve the problem that prompted it. A Kubernetes Secret is not
+encrypted: `stringData` is plaintext and `data` is base64. Rendering one
+writes the key into the same committed file under a different `kind:`, while
+suppressing the refusal that currently keeps it out. The requester would have
+ended up worse off than before.
+
+Referencing keeps secret material out of rendered output entirely, which is
+what makes the output safe to commit, and it is less machinery: no read, no
+encoding, no manifest. What the cluster does about the Secret — sops,
+sealed-secrets, external-secrets — stays that cluster's business, which is
+where it belongs.
+
+Because the file is not read, the source need not exist where the render
+runs. An entry matching no volume is refused rather than ignored: silently
+ignoring it fails open, rendering as content the mount it was meant to cover.
+
+Generating a Secret remains possible as a later opt-in, and would have to be
+documented as writing the material into the manifest.
+
 ### The refusal is a policy, not a law
 
 `--unrepresentable-mounts=empty-dir` (`RenderOptions.UnrepresentableMounts`)

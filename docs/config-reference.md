@@ -233,6 +233,52 @@ x-nix-compose.envFrom = [
 | `sopsFile` | string | Path to a sops-encrypted env file |
 | `prefix` | string | Prefix to prepend to all variable names |
 
+### `secretMounts`
+
+Marks bind mounts whose content is secret material the **cluster** supplies,
+so `render --target k8s` emits a reference to an existing `Secret` instead of
+copying the file into a ConfigMap.
+
+```nix
+services.ingress = {
+  volumes = [ "./.pki/tls-key.pem:/etc/certs/tls.pem:ro" ];
+  x-nix-compose.secretMounts = [
+    { source = "./.pki/tls-key.pem"; secretName = "ingress-tls"; key = "tls.key"; }
+  ];
+};
+```
+
+renders to a reference and nothing else:
+
+```yaml
+volumeMounts:
+  - name: ingress-tls
+    mountPath: /etc/certs/tls.pem
+    subPath: tls.key
+    readOnly: true
+volumes:
+  - name: ingress-tls
+    secret:
+      secretName: ingress-tls
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `source` | string | Host path, matched against the service's volume strings exactly as written |
+| `secretName` | string | `Secret` in the target namespace to mount from |
+| `key` | string | Secret key to project, mounted with `subPath`. Defaults to `source`'s base name |
+
+**No `Secret` manifest is emitted and the file is never read**, so rendered
+output carries no secret material and stays safe to commit. Whatever manages
+secrets in the cluster owns that `Secret` — nix-compose only names it. Because
+the file is not read, `source` need not exist on the machine doing the
+rendering.
+
+Locally nothing changes: `up` mounts the file the way the volume string says.
+
+An entry whose `source` matches no volume fails the render. Ignoring it would
+fail open — the mount it was meant to cover would render as content instead.
+
 ### `initContainers`
 
 Containers that run to completion before the main service starts.

@@ -245,8 +245,9 @@ looks like configuration, and no amount of guessing changes that. The refusal
 is a backstop for the case that can be recognised, not a guarantee that
 nothing sensitive reaches a ConfigMap.
 
-**Workaround:** mount secret material from a `Secret` you manage, patched in
-via an overlay, rather than from a bind mount.
+**Workaround:** declare the mount in `x-nix-compose.secretMounts`, which
+renders it as a reference to a `Secret` the cluster already has — no manifest,
+no file content. See the config reference.
 
 ### One ConfigMap per service, not per file
 

@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"bytes"
 	"errors"
 	"os"
 	"path/filepath"
@@ -437,5 +438,108 @@ func TestConvert_WarnsWhenAConfigMapWouldCarryAPrivateKey(t *testing.T) {
 		if !strings.Contains(result.Warnings[0], want) {
 			t.Errorf("warning %q does not mention %q", result.Warnings[0], want)
 		}
+	}
+}
+
+// secretMountService builds a service whose only mount is covered by a
+// declared secret mount.
+func secretMountService(source, secretName, key string) eval.Service {
+	return eval.Service{
+		Image:   "traefik",
+		Volumes: []string{source + ":/etc/certs/tls.pem:ro,z"},
+		XNixCompose: &eval.NixComposeExtended{
+			SecretMounts: []eval.SecretMount{
+				{Source: source, SecretName: secretName, Key: key},
+			},
+		},
+	}
+}
+
+func TestConvert_SecretMountReferencesWithoutEmittingContent(t *testing.T) {
+	dir, _ := pemKeyProject(t)
+	comp := &eval.Composition{Services: map[string]eval.Service{
+		"ingress": secretMountService("./tls-key.pem", "ingress-tls", "tls.key"),
+	}}
+
+	result, err := Convert(comp, nil, RenderOptions{Namespace: "demo", ProjectDir: dir})
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+
+	// The whole point: the key is on disk, and none of it reaches the output.
+	var buf bytes.Buffer
+	if err := WriteMultiDoc(&buf, result.Manifests); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(buf.String(), "PRIVATE KEY") {
+		t.Error("rendered output carries the key material a secret mount exists to keep out of it")
+	}
+	for _, m := range result.Manifests {
+		if _, isSecret := m.Object.(Secret); isSecret {
+			t.Error("a secret mount emitted a Secret; it must reference one the cluster already has")
+		}
+	}
+
+	d, _ := findManifest[Deployment](result.Manifests)
+	podVols := d.Spec.Template.Spec.Volumes
+	if len(podVols) != 1 || podVols[0].Secret == nil {
+		t.Fatalf("expected one secret pod volume, got %+v", podVols)
+	}
+	if podVols[0].Secret.SecretName != "ingress-tls" {
+		t.Errorf("secretName = %q, want ingress-tls", podVols[0].Secret.SecretName)
+	}
+	mounts := d.Spec.Template.Spec.Containers[0].VolumeMounts
+	want := VolumeMount{Name: "ingress-tls", MountPath: "/etc/certs/tls.pem", SubPath: "tls.key", ReadOnly: true}
+	if len(mounts) != 1 || mounts[0] != want {
+		t.Errorf("volume mount = %+v, want %+v", mounts, want)
+	}
+}
+
+func TestConvert_SecretMountNeedsNoLocalFile(t *testing.T) {
+	// The file is never read, so a source that exists only on the machine
+	// that populates the Secret still renders.
+	comp := &eval.Composition{Services: map[string]eval.Service{
+		"ingress": secretMountService("./.pki/absent.pem", "ingress-tls", "tls.key"),
+	}}
+
+	if _, err := Convert(comp, nil, RenderOptions{Namespace: "demo", ProjectDir: t.TempDir()}); err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+}
+
+func TestConvert_SecretMountKeyDefaultsToBasename(t *testing.T) {
+	comp := &eval.Composition{Services: map[string]eval.Service{
+		"ingress": secretMountService("./.pki/tls-key.pem", "ingress-tls", ""),
+	}}
+
+	result, err := Convert(comp, nil, RenderOptions{Namespace: "demo", ProjectDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	d, _ := findManifest[Deployment](result.Manifests)
+	if got := d.Spec.Template.Spec.Containers[0].VolumeMounts[0].SubPath; got != "tls-key.pem" {
+		t.Errorf("subPath = %q, want the source's base name", got)
+	}
+}
+
+func TestConvert_SecretMountMatchingNoVolumeIsRefused(t *testing.T) {
+	svc := secretMountService("./tls-key.pem", "ingress-tls", "tls.key")
+	svc.XNixCompose.SecretMounts[0].Source = "./tls-kye.pem" // typo
+	comp := &eval.Composition{Services: map[string]eval.Service{"ingress": svc}}
+
+	_, err := Convert(comp, nil, RenderOptions{Namespace: "demo", ProjectDir: t.TempDir()})
+	if err == nil {
+		t.Fatal("a secret mount naming no volume was ignored; the mount it covers would render as content")
+	}
+
+	var refused *MountRefusalError
+	if !errors.As(err, &refused) {
+		t.Fatalf("error is %T, want *MountRefusalError", err)
+	}
+	if !refused.MustFix {
+		t.Error("MustFix is false, so the CLI would offer flags that cannot render this")
+	}
+	if !strings.Contains(err.Error(), "./tls-kye.pem") {
+		t.Errorf("error %q does not name the entry that matched nothing", err)
 	}
 }

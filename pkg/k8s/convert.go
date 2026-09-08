@@ -16,6 +16,9 @@ import (
 type MountRefusalError struct {
 	Refusals  []error
 	Overrides []string
+	// MustFix reports that at least one refusal has no override, so passing
+	// every flag in Overrides still will not render the composition.
+	MustFix bool
 }
 
 // UnrepresentableMountError is the previous name of MountRefusalError, kept
@@ -81,15 +84,17 @@ func planCompositionVolumes(comp *eval.Composition, opts RenderOptions) (map[str
 	var warnings []string
 	var refusals []error
 	var overrides []string
+	mustFix := false
 	for _, name := range sortedServiceNames(comp) {
 		plan := planVolumes(name, comp.Services[name], volumes, opts)
 		plans[name] = plan
 		warnings = append(warnings, plan.warnings...)
 		refusals = append(refusals, plan.refusals...)
 		overrides = mergeOverrides(overrides, plan.overrides)
+		mustFix = mustFix || plan.mustFix
 	}
 	if len(refusals) > 0 {
-		return nil, nil, &MountRefusalError{Refusals: refusals, Overrides: overrides}
+		return nil, nil, &MountRefusalError{Refusals: refusals, Overrides: overrides, MustFix: mustFix}
 	}
 	return plans, warnings, nil
 }
