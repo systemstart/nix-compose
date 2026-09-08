@@ -249,6 +249,24 @@ nothing sensitive reaches a ConfigMap.
 renders it as a reference to a `Secret` the cluster already has — no manifest,
 no file content. See the config reference.
 
+### `envFrom` values are rendered into a Secret in plain text
+
+`x-nix-compose.envFrom` resolves dotenv and sops files at render time and
+writes the resolved values into a `Secret`'s `stringData`. A Kubernetes
+Secret is not encrypted — `stringData` is plaintext and `data` is base64 — so
+those values land in the rendered manifest, and in version control if the
+output is committed.
+
+This is the same exposure that bind-mounted files had before v0.5.0, by a
+different route, and it is **not** covered by `--secret-material`: that flag
+governs mounts, and only recognises PEM private keys. An API token resolved
+from a sops file looks like configuration.
+
+**Workaround:** for material that must not reach the rendered tree, mount it
+with `x-nix-compose.secretMounts` and let the cluster's secret manager own
+the `Secret`, or strip the generated `<service>-secret.yaml` and supply your
+own in an overlay.
+
 ### One ConfigMap per service, not per file
 
 The same file bind-mounted into two services generates two ConfigMaps, one

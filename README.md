@@ -454,7 +454,10 @@ management via `--remote-vsock-cid`.
 ### Profiles
 
 Services can declare a `profiles` list. Only services matching an active
-profile (or services with no profiles) are started:
+profile (or services with no profiles) are started — with no profile active,
+a service declaring one does not run. This applies to `up`, `plan` and
+`render --target k8s` alike, so a profile is also how you keep a service out
+of rendered manifests:
 
 ```sh
 nix-compose up --profile observability -d
@@ -476,11 +479,49 @@ Emits `Deployment`, `Service`, `Secret`, `ConfigMap`,
 `PersistentVolumeClaim`, and a base `kustomization.yaml`. Optionally
 validates with `kubectl apply --dry-run=client`.
 
-A bind-mounted configuration file becomes a generated ConfigMap mounted with
-`subPath`. A bind mount the target cannot represent — a directory, a path
-outside the project, a binary or missing file — fails the render rather than
-emitting an empty volume; pass `--unrepresentable-mounts=empty-dir` to
-downgrade that to a warning.
+Only services an active profile enables are rendered, exactly as for `up`, so
+services you run locally but do not deploy stay out of the manifests — see
+[Profiles](#profiles).
+
+**Bind mounts.** A bind-mounted configuration *file* becomes a generated
+ConfigMap mounted with `subPath`. Two cases refuse rather than guess, each
+with a flag that overrides it:
+
+| Case | Default | Override |
+|---|---|---|
+| No K8s equivalent — a directory, a path outside the project, a socket, a binary or missing file | fails the render | `--unrepresentable-mounts=empty-dir` |
+| The file holds a PEM private key — a ConfigMap is not a Secret | fails the render | `--secret-material=configmap` |
+
+Both refuse by default because the alternative fails later and quieter: an
+empty volume surfaces as a container that cannot find its config, and a key
+rendered into a ConfigMap surfaces as a key in version control. Every refusal
+in a run is reported at once, naming the service and the volume.
+
+**Secret material** belongs in a `Secret` the cluster already has. Name it and
+the mount renders as a reference — no `Secret` manifest, no file content, so
+the output stays safe to commit:
+
+```nix
+services.ingress = {
+  volumes = [ "./.pki/tls-key.pem:/etc/certs/tls.pem:ro" ];
+  x-nix-compose.secretMounts = [
+    { source = "./.pki/tls-key.pem"; secretName = "ingress-tls"; key = "tls.key"; }
+  ];
+};
+```
+
+```yaml
+volumes:
+  - name: ingress-tls
+    secret:
+      secretName: ingress-tls        # yours to manage; not emitted here
+```
+
+Locally nothing changes — `up` mounts the file as the volume string says. The
+file is never read, so it need not exist on the machine that renders. See
+[docs/config-reference.md](docs/config-reference.md#secretmounts) for the
+fields and [ADR-026](docs/adrs/026-bind-mounts-in-the-k8s-target.md) for why
+it references a Secret rather than generating one.
 
 ### `exec` behaviour
 
@@ -601,6 +642,10 @@ x-nix-compose:
       - bash
 ```
 
+Also available: `resources`, `probes`, `envFrom`, `initContainers`,
+`namedPorts`, `secretMounts`, `useHostStore`. Every field is documented in
+[docs/config-reference.md](docs/config-reference.md).
+
 ## Agent guide
 
 The full configuration reference and development guide for AI coding agents
@@ -610,6 +655,24 @@ is embedded in the binary and can also be read at
 ```sh
 nix-compose docs   # print the embedded guide
 ```
+
+## Upgrading
+
+There is no changelog file to go stale. Each release's notes are generated
+from the commit history and published as the GitHub release body:
+
+**<https://github.com/systemstart/nix-compose/releases>**
+
+A breaking change is marked `!` on the commit type and carries a
+`BREAKING CHANGE:` footer stating what broke and what to do about it, so the
+release page is the migration guide — read the bodies of the releases between
+your pin and the one you are moving to.
+
+While the major version is 0, the `nix-compose.yaml` schema and the CLI
+surface may change between minor releases.
+[docs/limitations.md](docs/limitations.md) is the honest account of what does
+not work, and [docs/adrs/](docs/adrs/README.md) carries the reasoning behind
+each design decision.
 
 ## Development
 
