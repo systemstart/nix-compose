@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: DeterminateSystems/nix-installer-action@v22
+      - uses: DeterminateSystems/nix-installer-action@v23
         with:
           determinate: false
           diagnostic-endpoint: ''
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: DeterminateSystems/nix-installer-action@v22
+      - uses: DeterminateSystems/nix-installer-action@v23
         with:
           determinate: false
           diagnostic-endpoint: ''
@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: DeterminateSystems/nix-installer-action@v22
+      - uses: DeterminateSystems/nix-installer-action@v23
         with:
           determinate: false
           diagnostic-endpoint: ''
@@ -84,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: DeterminateSystems/nix-installer-action@v22
+      - uses: DeterminateSystems/nix-installer-action@v23
         with:
           determinate: false
           diagnostic-endpoint: ''
@@ -108,7 +108,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # git-cliff needs the full history and the tags
-      - uses: DeterminateSystems/nix-installer-action@v22
+      - uses: DeterminateSystems/nix-installer-action@v23
         with:
           determinate: false
           diagnostic-endpoint: ''
@@ -138,7 +138,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0   # goreleaser builds its changelog from history
-      - uses: DeterminateSystems/nix-installer-action@v22
+      - uses: DeterminateSystems/nix-installer-action@v23
         with:
           determinate: false
           diagnostic-endpoint: ''
