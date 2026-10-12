@@ -42,7 +42,7 @@
       # maintenance PR first (scheduled earlier for that reason), or run
       # `nix flake update go-overlay` in the same branch.
       # renovate: datasource=golang-version depName=go
-      goVersion = "1.27.1";
+      goVersion = "1.27.2";
 
       # Overlay is system-independent.
       #
