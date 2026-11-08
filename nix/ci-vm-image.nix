@@ -16,7 +16,8 @@ let
     # ── Boot ──────────────────────────────────────────────────────────
     boot.kernelParams = [ "console=ttyS0" ];
 
-    boot.initrd.systemd.enable = true;
+    # The initrd is systemd's: nixpkgs removed the scripted one, and setting
+    # boot.initrd.systemd.enable at all is now a failed assertion.
 
     boot.initrd.availableKernelModules = [
       "virtiofs"

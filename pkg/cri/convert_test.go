@@ -171,17 +171,17 @@ func TestParseStopSignal(t *testing.T) {
 		in   string
 		want runtimev1.Signal
 	}{
-		{"SIGTERM", "SIGTERM", runtimev1.Signal_SIGTERM},
-		{"SIGKILL", "SIGKILL", runtimev1.Signal_SIGKILL},
-		{"SIGUSR1", "SIGUSR1", runtimev1.Signal_SIGUSR1},
-		{"case-insensitive", "sigterm", runtimev1.Signal_SIGTERM},
-		{"mixed-case", "SigKill", runtimev1.Signal_SIGKILL},
-		{"without-SIG-prefix", "TERM", runtimev1.Signal_SIGTERM},
-		{"without-SIG-prefix-lower", "kill", runtimev1.Signal_SIGKILL},
-		{"empty", "", runtimev1.Signal_RUNTIME_DEFAULT},
-		{"bogus", "NOTASIGNAL", runtimev1.Signal_RUNTIME_DEFAULT},
-		{"SIGHUP", "SIGHUP", runtimev1.Signal_SIGHUP},
-		{"SIGINT", "SIGINT", runtimev1.Signal_SIGINT},
+		{"SIGTERM", "SIGTERM", runtimev1.Signal_SIGNAL_SIGTERM},
+		{"SIGKILL", "SIGKILL", runtimev1.Signal_SIGNAL_SIGKILL},
+		{"SIGUSR1", "SIGUSR1", runtimev1.Signal_SIGNAL_SIGUSR1},
+		{"case-insensitive", "sigterm", runtimev1.Signal_SIGNAL_SIGTERM},
+		{"mixed-case", "SigKill", runtimev1.Signal_SIGNAL_SIGKILL},
+		{"without-SIG-prefix", "TERM", runtimev1.Signal_SIGNAL_SIGTERM},
+		{"without-SIG-prefix-lower", "kill", runtimev1.Signal_SIGNAL_SIGKILL},
+		{"empty", "", runtimev1.Signal_SIGNAL_RUNTIME_DEFAULT},
+		{"bogus", "NOTASIGNAL", runtimev1.Signal_SIGNAL_RUNTIME_DEFAULT},
+		{"SIGHUP", "SIGHUP", runtimev1.Signal_SIGNAL_SIGHUP},
+		{"SIGINT", "SIGINT", runtimev1.Signal_SIGNAL_SIGINT},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -199,7 +199,7 @@ func TestBuildContainerConfig_StopSignal(t *testing.T) {
 		StopSignal: "SIGUSR1",
 	}
 	cfg := BuildContainerConfig("web", svc, "proj", "v1", nil)
-	if cfg.StopSignal != runtimev1.Signal_SIGUSR1 {
+	if cfg.StopSignal != runtimev1.Signal_SIGNAL_SIGUSR1 {
 		t.Errorf("StopSignal = %v, want SIGUSR1", cfg.StopSignal)
 	}
 }
@@ -207,7 +207,7 @@ func TestBuildContainerConfig_StopSignal(t *testing.T) {
 func TestBuildContainerConfig_StopSignalEmpty(t *testing.T) {
 	svc := eval.Service{Image: "nginx"}
 	cfg := BuildContainerConfig("web", svc, "proj", "v1", nil)
-	if cfg.StopSignal != runtimev1.Signal_RUNTIME_DEFAULT {
+	if cfg.StopSignal != runtimev1.Signal_SIGNAL_RUNTIME_DEFAULT {
 		t.Errorf("StopSignal = %v, want RUNTIME_DEFAULT", cfg.StopSignal)
 	}
 }
