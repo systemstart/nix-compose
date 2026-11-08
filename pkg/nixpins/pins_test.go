@@ -2,6 +2,7 @@ package nixpins
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,6 +73,14 @@ func TestLockedPins(t *testing.T) {
 	lock := func(nodes string) []byte {
 		return []byte(`{"root":"root","version":7,"nodes":{` + nodes + `}}`)
 	}
+	// nixpkgs follows c1, c1 follows c2, ... c39 follows c40, which is the node:
+	// longer than any depth cap, and no cycle.
+	var chain strings.Builder
+	chain.WriteString(`"nixpkgs":["c1"]`)
+	for i := 1; i < 40; i++ {
+		fmt.Fprintf(&chain, `,"c%d":["c%d"]`, i, i+1)
+	}
+	chain.WriteString(`,"c40":"nixpkgs","nix-oci":"nix-oci"`)
 	for _, tc := range []struct {
 		name, nodes string
 		want        []string // refs
@@ -107,9 +116,22 @@ func TestLockedPins(t *testing.T) {
 			want: []string{"github:NixOS/nixpkgs/" + a, "github:systemstart/nix-oci/" + b},
 		},
 		{
+			name: "a long follows chain",
+			nodes: `"root":{"inputs":{` + chain.String() + `}},
+				"nixpkgs":{` + gh("NixOS", "nixpkgs", a) + `},"nix-oci":{` + gh("nix-gizmos", "nix-oci", b) + `}`,
+			want: []string{"github:NixOS/nixpkgs/" + a, "github:nix-gizmos/nix-oci/" + b},
+		},
+		{
+			name: "dir and host qualifiers are kept",
+			nodes: `"root":{"inputs":{"nixpkgs":"nixpkgs","nix-oci":"nix-oci"}},
+				"nixpkgs":{` + gh("NixOS", "nixpkgs", a) + `},
+				"nix-oci":{"locked":{"type":"github","owner":"o","repo":"r","rev":"` + b + `","dir":"sub/flake","host":"git.example.org"}}`,
+			want: []string{"github:NixOS/nixpkgs/" + a, "github:o/r/" + b + "?dir=sub%2Fflake&host=git.example.org"},
+		},
+		{
 			name:  "a follows cycle",
 			nodes: `"root":{"inputs":{"nixpkgs":["nix-oci"],"nix-oci":["nixpkgs"]}}`,
-			err:   "too deep",
+			err:   "follows cycle",
 		},
 		{
 			name:  "missing input",

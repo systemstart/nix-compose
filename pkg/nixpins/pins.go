@@ -18,7 +18,9 @@ package nixpins
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"regexp"
+	"strings"
 
 	nixcompose "github.com/systemstart/nix-compose"
 )
@@ -46,13 +48,28 @@ func init() {
 	NixpkgsRev, NixOCIRev = nixpkgs.Rev, nixOCI.Rev
 }
 
-// pin is a locked GitHub flake input: repository and revision.
-type pin struct{ Owner, Repo, Rev string }
+// pin is a locked GitHub flake input: repository, revision, and the optional
+// `dir` (a flake in a subdirectory) and `host` (GitHub Enterprise) qualifiers.
+type pin struct{ Owner, Repo, Rev, Dir, Host string }
 
 // ref is the flake reference of exactly what the lock locked. Pinned to a full
 // revision rather than a branch so `builtins.getFlake` stays pure; built from
 // the locked repository too, so a fork's revision is looked up in the fork.
-func (p pin) ref() string { return "github:" + p.Owner + "/" + p.Repo + "/" + p.Rev }
+// `dir` and `host` are carried over when the lock has them.
+func (p pin) ref() string {
+	ref := "github:" + p.Owner + "/" + p.Repo + "/" + p.Rev
+	q := url.Values{}
+	if p.Dir != "" {
+		q.Set("dir", p.Dir)
+	}
+	if p.Host != "" {
+		q.Set("host", p.Host)
+	}
+	if len(q) > 0 {
+		ref += "?" + q.Encode()
+	}
+	return ref
+}
 
 type lockNode struct {
 	Inputs map[string]json.RawMessage `json:"inputs"`
@@ -61,6 +78,8 @@ type lockNode struct {
 		Owner string `json:"owner"`
 		Repo  string `json:"repo"`
 		Rev   string `json:"rev"`
+		Dir   string `json:"dir"`
+		Host  string `json:"host"`
 	} `json:"locked"`
 }
 
@@ -83,7 +102,7 @@ func lockedPins(lock []byte, inputs ...string) ([]pin, error) {
 	}
 	pins := make([]pin, 0, len(inputs))
 	for _, in := range inputs {
-		name, err := resolve(l.Nodes, l.Root, []string{in}, 0)
+		name, err := resolve(l.Nodes, l.Root, []string{in}, map[string]bool{})
 		if err != nil {
 			return nil, fmt.Errorf("input %q: %w", in, err)
 		}
@@ -94,18 +113,23 @@ func lockedPins(lock []byte, inputs ...string) ([]pin, error) {
 		if !fullRev.MatchString(locked.Rev) {
 			return nil, fmt.Errorf("input %q (node %q) has no full locked revision: %q", in, name, locked.Rev)
 		}
-		pins = append(pins, pin{locked.Owner, locked.Repo, locked.Rev})
+		pins = append(pins, pin{locked.Owner, locked.Repo, locked.Rev, locked.Dir, locked.Host})
 	}
 	return pins, nil
 }
 
 // resolve follows an input path from the root, as nix does: each step takes
 // the named input of the current node; an input that is itself a path
-// (`follows`) is resolved from the root again. depth bounds a cyclic lock.
-func resolve(nodes map[string]lockNode, root string, path []string, depth int) (string, error) {
-	if depth > 32 {
-		return "", fmt.Errorf("follows chain too deep (a cycle?)")
+// (`follows`) is resolved from the root again. Resolution is deterministic, so a
+// follows path met again while it is still being resolved is a cycle; inFlight
+// holds those paths. Chains of any length that do not loop resolve.
+func resolve(nodes map[string]lockNode, root string, path []string, inFlight map[string]bool) (string, error) {
+	key := strings.Join(path, "\x00") // input names are arbitrary strings
+	if inFlight[key] {
+		return "", fmt.Errorf("follows cycle through %q", strings.Join(path, "/"))
 	}
+	inFlight[key] = true
+	defer delete(inFlight, key)
 	node := root
 	for _, step := range path {
 		raw, ok := nodes[node].Inputs[step]
@@ -121,7 +145,7 @@ func resolve(nodes map[string]lockNode, root string, path []string, depth int) (
 		if err := json.Unmarshal(raw, &follows); err != nil {
 			return "", fmt.Errorf("node %q input %q is neither a node nor a follows path", node, step)
 		}
-		next, err := resolve(nodes, root, follows, depth+1)
+		next, err := resolve(nodes, root, follows, inFlight)
 		if err != nil {
 			return "", err
 		}
