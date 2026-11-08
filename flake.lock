@@ -111,7 +111,6 @@
     "git-hooks_2": {
       "inputs": {
         "flake-compat": "flake-compat_2",
-        "gitignore": "gitignore",
         "nixpkgs": [
           "nix-oci",
           "go-overlay",
@@ -119,39 +118,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1778507602,
-        "narHash": "sha256-kTwur1wV+01SdqskVMSo6JMEpg71ps3HpbFY2GsflKs=",
+        "lastModified": 1788267358,
+        "narHash": "sha256-nt+lUqYVpc9Y6JeMd2WmXzCDojasdadKo0mWcluvY2Y=",
         "owner": "cachix",
         "repo": "git-hooks.nix",
-        "rev": "61ab0e80d9c7ab14c256b5b453d8b3fb0189ba0a",
+        "rev": "27555e2624241fb116b49095df4caaee85a25691",
         "type": "github"
       },
       "original": {
         "owner": "cachix",
         "repo": "git-hooks.nix",
-        "type": "github"
-      }
-    },
-    "gitignore": {
-      "inputs": {
-        "nixpkgs": [
-          "nix-oci",
-          "go-overlay",
-          "git-hooks",
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1709087332,
-        "narHash": "sha256-HG2cCnktfHsKV0s4XW83gU3F57gaTljL9KNSuG6bnQs=",
-        "owner": "hercules-ci",
-        "repo": "gitignore.nix",
-        "rev": "637db329424fd7e46cf4185293b9cc8c88c95394",
-        "type": "github"
-      },
-      "original": {
-        "owner": "hercules-ci",
-        "repo": "gitignore.nix",
         "type": "github"
       }
     },
@@ -187,11 +163,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1788301927,
-        "narHash": "sha256-Zmcvt5yW//YLT3HYe3bWN1Sf2txYrnBpa5jLULVokc0=",
+        "lastModified": 1793774382,
+        "narHash": "sha256-FbAHhkHJSREUBNegF3bOXtDyqzrAoIs6Aql1afo/cjE=",
         "owner": "purpleclay",
         "repo": "go-overlay",
-        "rev": "fe48ae4f56981f9f7c2bf03d4951fb0aa6e2095b",
+        "rev": "390b41ddf587846a6932ebef355f6e9981dd78e9",
         "type": "github"
       },
       "original": {
@@ -208,16 +184,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1788780141,
-        "narHash": "sha256-OrHa1WYtN/EjwP8t7uTSe/mvOE57WeFLudoWo/Po5Lg=",
+        "lastModified": 1794172338,
+        "narHash": "sha256-5Xr4tJdWFkvN2A64R4r6PFryXK/g3YM9X9YAUssPR0A=",
         "owner": "nix-gizmos",
         "repo": "nix-oci",
-        "rev": "2df53c7ac4766b13e0e9b3263310834f4b94eaf1",
+        "rev": "3aeda311b3c2e6a11bd8dda69f6fa2ce28ed258c",
         "type": "github"
       },
       "original": {
         "owner": "nix-gizmos",
-        "ref": "v0.6.0",
+        "ref": "v0.7.0",
         "repo": "nix-oci",
         "type": "github"
       }
