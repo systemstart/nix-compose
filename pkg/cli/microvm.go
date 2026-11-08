@@ -8,10 +8,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
-	"github.com/systemstart/nix-compose/pkg/microvm"
-	"github.com/systemstart/nix-compose/pkg/microvm/builder"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/client"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/microvm"
+	"github.com/nix-gizmos/nix-compose/pkg/microvm/builder"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/client"
 )
 
 // newVM is the constructor used to create a microVM. It is a package-level

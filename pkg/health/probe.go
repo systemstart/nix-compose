@@ -3,7 +3,7 @@ package health
 import (
 	"time"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
 )
 
 // ProbeType identifies the kind of health probe.

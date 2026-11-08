@@ -22,7 +22,7 @@ import (
 	"regexp"
 	"strings"
 
-	nixcompose "github.com/systemstart/nix-compose"
+	nixcompose "github.com/nix-gizmos/nix-compose"
 )
 
 var (

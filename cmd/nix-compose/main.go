@@ -3,7 +3,7 @@ package main
 import (
 	_ "embed"
 
-	"github.com/systemstart/nix-compose/pkg/cli"
+	"github.com/nix-gizmos/nix-compose/pkg/cli"
 )
 
 // version is set at build time via -ldflags.

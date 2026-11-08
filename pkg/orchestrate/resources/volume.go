@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/systemstart/nix-compose/pkg/orchestrate/typing"
-	"github.com/systemstart/nix-compose/pkg/volumes"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/typing"
+	"github.com/nix-gizmos/nix-compose/pkg/volumes"
 )
 
 // VolumeSpec is the spec for a Volume resource.

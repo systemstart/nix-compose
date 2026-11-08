@@ -10,7 +10,7 @@ on:
 permissions:
   contents: read
 
-# Every job pulls from and pushes to the shared `systemstart` Cachix cache, so
+# Every job pulls from and pushes to the shared `nix-gizmos` Cachix cache, so
 # a derivation built once is not rebuilt anywhere — including across repos.
 # nix-compose takes nix-oci as a flake input, so nix-oci's CI builds land here
 # for free. That is also why there is no separate GitHub Actions store cache:
@@ -28,7 +28,9 @@ jobs:
           diagnostic-endpoint: ''
       - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
-          name: systemstart
+          name: nix-gizmos
+          # systemstart is the earlier cache, read until nix-gizmos has caught up.
+          extraPullNames: systemstart
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
       - run: nix develop --command make lint
@@ -43,7 +45,9 @@ jobs:
           diagnostic-endpoint: ''
       - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
-          name: systemstart
+          name: nix-gizmos
+          # systemstart is the earlier cache, read until nix-gizmos has caught up.
+          extraPullNames: systemstart
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
       # `make test` enforces its own coverage threshold and writes coverage.out.
@@ -64,7 +68,9 @@ jobs:
           diagnostic-endpoint: ''
       - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
-          name: systemstart
+          name: nix-gizmos
+          # systemstart is the earlier cache, read until nix-gizmos has caught up.
+          extraPullNames: systemstart
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
       - run: nix develop --command make build
@@ -90,7 +96,9 @@ jobs:
           diagnostic-endpoint: ''
       - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
-          name: systemstart
+          name: nix-gizmos
+          # systemstart is the earlier cache, read until nix-gizmos has caught up.
+          extraPullNames: systemstart
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
       # Linux-only outputs, which this runner is.
@@ -114,7 +122,9 @@ jobs:
           diagnostic-endpoint: ''
       - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
-          name: systemstart
+          name: nix-gizmos
+          # systemstart is the earlier cache, read until nix-gizmos has caught up.
+          extraPullNames: systemstart
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
       - run: nix develop --command goreleaser check
@@ -144,7 +154,9 @@ jobs:
           diagnostic-endpoint: ''
       - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
-          name: systemstart
+          name: nix-gizmos
+          # systemstart is the earlier cache, read until nix-gizmos has caught up.
+          extraPullNames: systemstart
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
       - run: nix develop --command make release

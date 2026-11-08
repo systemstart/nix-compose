@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
-	"github.com/systemstart/nix-compose/pkg/microvm"
-	"github.com/systemstart/nix-compose/pkg/microvm/builder"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/microvm"
+	"github.com/nix-gizmos/nix-compose/pkg/microvm/builder"
 )
 
 func TestMicrovmConfig(t *testing.T) {

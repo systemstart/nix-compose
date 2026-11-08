@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/systemstart/nix-compose/pkg/orchestrate/state"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/typing"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/state"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/typing"
 )
 
 // Rollout tracks the status of a resource instance deployment.

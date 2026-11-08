@@ -9,8 +9,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/systemstart/nix-compose/pkg/composeimport"
-	"github.com/systemstart/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/composeimport"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
 )
 
 var suggestCmd = &cobra.Command{

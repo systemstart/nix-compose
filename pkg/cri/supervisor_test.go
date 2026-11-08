@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
 )
 
 // setupSupervisorEnv creates a mock CRI server, dials a client, and returns

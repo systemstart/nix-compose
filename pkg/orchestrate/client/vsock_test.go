@@ -5,14 +5,14 @@ import (
 	"net"
 	"testing"
 
-	"github.com/systemstart/nix-compose/internal/testsock"
+	"github.com/nix-gizmos/nix-compose/internal/testsock"
 
-	orchestratev1 "github.com/systemstart/nix-compose/api/orchestrate/v1"
-	"github.com/systemstart/nix-compose/pkg/cni"
-	"github.com/systemstart/nix-compose/pkg/cri"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/client"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/server"
-	"github.com/systemstart/nix-compose/pkg/volumes"
+	orchestratev1 "github.com/nix-gizmos/nix-compose/api/orchestrate/v1"
+	"github.com/nix-gizmos/nix-compose/pkg/cni"
+	"github.com/nix-gizmos/nix-compose/pkg/cri"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/client"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/server"
+	"github.com/nix-gizmos/nix-compose/pkg/volumes"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nix-gizmos/nix-compose/pkg/cri"
 	"github.com/spf13/cobra"
-	"github.com/systemstart/nix-compose/pkg/cri"
 )
 
 // Version is set at build time via -ldflags.

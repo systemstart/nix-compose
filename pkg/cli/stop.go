@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nix-gizmos/nix-compose/pkg/cri"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/deploy"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/state"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/typing"
 	"github.com/spf13/cobra"
-	"github.com/systemstart/nix-compose/pkg/cri"
-	"github.com/systemstart/nix-compose/pkg/orchestrate"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/deploy"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/state"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/typing"
 	runtimev1 "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate"
 	"github.com/spf13/cobra"
-	"github.com/systemstart/nix-compose/pkg/orchestrate"
 )
 
 var graphFormat string

@@ -27,9 +27,9 @@ pushed or pulled.
 ## Install
 
 ```sh
-nix run github:systemstart/nix-compose -- up -d
+nix run github:nix-gizmos/nix-compose -- up -d
 # or
-go install github.com/systemstart/nix-compose/cmd/nix-compose@latest
+go install github.com/nix-gizmos/nix-compose/cmd/nix-compose@latest
 ```
 
 Or download an archive below. Linux only; needs containerd or CRI-O.
@@ -38,7 +38,7 @@ finding carries its fix.
 
 ## Before you adopt it
 
-Read [docs/limitations.md](https://github.com/systemstart/nix-compose/blob/main/docs/limitations.md)
+Read [docs/limitations.md](https://github.com/nix-gizmos/nix-compose/blob/main/docs/limitations.md)
 — a deliberately complete account of what does not work, not a marketing
 document. The changes in this release are listed below.
 
@@ -74,7 +74,7 @@ While the major version is 0, the `nix-compose.yaml` schema and the CLI
 surface may still change between minor releases.
 
 Archives are attested with build provenance; verify with
-`gh attestation verify <archive> --repo systemstart/nix-compose`.
+`gh attestation verify <archive> --repo nix-gizmos/nix-compose`.
 """
 
 trim = false

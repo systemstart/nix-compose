@@ -3,9 +3,9 @@ package convert
 import (
 	"testing"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/resources"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/typing"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/resources"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/typing"
 )
 
 func TestConvert_Minimal(t *testing.T) {

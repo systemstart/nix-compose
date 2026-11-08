@@ -8,7 +8,7 @@ import (
 	"net"
 
 	"github.com/mdlayher/vsock"
-	orchestratev1 "github.com/systemstart/nix-compose/api/orchestrate/v1"
+	orchestratev1 "github.com/nix-gizmos/nix-compose/api/orchestrate/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

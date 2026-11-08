@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
 )
 
 func testdataPath(name string) string {

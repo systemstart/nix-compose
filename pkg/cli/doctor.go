@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/systemstart/nix-compose/pkg/doctor"
+	"github.com/nix-gizmos/nix-compose/pkg/doctor"
 )
 
 var doctorCmd = &cobra.Command{

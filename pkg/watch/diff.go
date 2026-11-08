@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
 )
 
 // DiffResult describes changes between two compositions.

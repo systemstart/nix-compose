@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/systemstart/nix-compose/pkg/nixerror"
+	"github.com/nix-gizmos/nix-compose/pkg/nixerror"
 )
 
 // CommandRunner abstracts command execution for testability.

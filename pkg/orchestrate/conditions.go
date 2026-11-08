@@ -7,13 +7,13 @@ import (
 	"log"
 	"time"
 
-	"github.com/systemstart/nix-compose/pkg/cri"
-	"github.com/systemstart/nix-compose/pkg/eval"
-	"github.com/systemstart/nix-compose/pkg/health"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/convert"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/resources"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/state"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/typing"
+	"github.com/nix-gizmos/nix-compose/pkg/cri"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/health"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/convert"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/resources"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/state"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/typing"
 )
 
 // waitCondition blocks until all conditions for resourceID are met.

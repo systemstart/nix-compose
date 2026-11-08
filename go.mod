@@ -1,4 +1,4 @@
-module github.com/systemstart/nix-compose
+module github.com/nix-gizmos/nix-compose
 
 go 1.26.6
 

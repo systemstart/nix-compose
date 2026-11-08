@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/systemstart/nix-compose/internal/testsock"
+	"github.com/nix-gizmos/nix-compose/internal/testsock"
 
 	"google.golang.org/grpc"
 	runtimev1 "k8s.io/cri-api/pkg/apis/runtime/v1"

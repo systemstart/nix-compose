@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/systemstart/nix-compose/pkg/cri"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/typing"
+	"github.com/nix-gizmos/nix-compose/pkg/cri"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/typing"
 )
 
 // ImageSpec is the spec for an Image resource.

@@ -6,9 +6,9 @@ import (
 	"net"
 	"testing"
 
-	"github.com/systemstart/nix-compose/internal/testsock"
+	"github.com/nix-gizmos/nix-compose/internal/testsock"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

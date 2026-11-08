@@ -27,7 +27,7 @@ lifecycle with familiar commands.
 - **Registry-free images.** A service can name a *package* instead of a tag
   (`package: hello`, or `services.web.package = pkgs.hello;` in Nix). The
   image is built from that package's Nix closure by
-  [nix-oci](https://github.com/systemstart/nix-oci) and imported straight
+  [nix-oci](https://github.com/nix-gizmos/nix-oci) and imported straight
   into the runtime: no Dockerfile, no `docker build`, nothing pushed or
   pulled
 - **YAML or Nix.** Start with a `nix-compose.yaml` that looks like a compose
@@ -64,7 +64,7 @@ lifecycle with familiar commands.
   evaluating locally; `up --microvm` boots a NixOS microVM via
   cloud-hypervisor and orchestrates inside it over vsock
 
-See the [releases](https://github.com/systemstart/nix-compose/releases) for
+See the [releases](https://github.com/nix-gizmos/nix-compose/releases) for
 the release history — each body carries the changelog for that tag — and
 [docs/limitations.md](docs/limitations.md) for what does not work.
 
@@ -111,19 +111,19 @@ You need:
 ## Install
 
 **Binary download** — grab the latest archive from
-[GitHub releases](https://github.com/systemstart/nix-compose/releases).
+[GitHub releases](https://github.com/nix-gizmos/nix-compose/releases).
 
 **Nix flake:**
 
 ```sh
-nix run git+https://github.com/systemstart/nix-compose.git -- up -d
-# or: nix build git+https://github.com/systemstart/nix-compose.git
+nix run git+https://github.com/nix-gizmos/nix-compose.git -- up -d
+# or: nix build git+https://github.com/nix-gizmos/nix-compose.git
 ```
 
 **go install:**
 
 ```sh
-go install github.com/systemstart/nix-compose/cmd/nix-compose@latest
+go install github.com/nix-gizmos/nix-compose/cmd/nix-compose@latest
 ```
 
 **Build from source:**
@@ -231,7 +231,7 @@ builds the image from its Nix closure and imports it straight into containerd:
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nix-compose = {
-      url = "github:systemstart/nix-compose";
+      url = "github:nix-gizmos/nix-compose";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -661,7 +661,7 @@ nix-compose docs   # print the embedded guide
 There is no changelog file to go stale. Each release's notes are generated
 from the commit history and published as the GitHub release body:
 
-**<https://github.com/systemstart/nix-compose/releases>**
+**<https://github.com/nix-gizmos/nix-compose/releases>**
 
 A breaking change is marked `!` on the commit type and carries a
 `BREAKING CHANGE:` footer stating what broke and what to do about it, so the
@@ -686,7 +686,7 @@ make fmt         # auto-format
 
 ## License
 
-[GPL-3.0](./LICENSE), matching [nix-oci](https://github.com/systemstart/nix-oci).
+[GPL-3.0](./LICENSE), matching [nix-oci](https://github.com/nix-gizmos/nix-oci).
 
 Dependencies are Apache-2.0, BSD and MIT, all of which combine into a GPLv3
 work.

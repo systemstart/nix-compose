@@ -3,11 +3,11 @@ package convert
 import (
 	"testing"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/deploy"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/manifest"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/resources"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/typing"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/deploy"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/manifest"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/resources"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/typing"
 )
 
 func testRegistry() *typing.Registry {

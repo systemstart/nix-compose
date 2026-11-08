@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
 )
 
 // announceEval says what is about to happen, which is not the same thing in

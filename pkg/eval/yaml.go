@@ -14,9 +14,9 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	nixsrc "github.com/systemstart/nix-compose/nix"
-	"github.com/systemstart/nix-compose/pkg/nixerror"
-	"github.com/systemstart/nix-compose/pkg/nixpins"
+	nixsrc "github.com/nix-gizmos/nix-compose/nix"
+	"github.com/nix-gizmos/nix-compose/pkg/nixerror"
+	"github.com/nix-gizmos/nix-compose/pkg/nixpins"
 )
 
 // YAMLFileNames are the project files that select YAML mode, in precedence

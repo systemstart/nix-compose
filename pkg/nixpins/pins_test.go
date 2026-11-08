@@ -91,8 +91,8 @@ func TestLockedPins(t *testing.T) {
 			nodes: `"root":{"inputs":{"nixpkgs":"nixpkgs_2","nix-oci":"nix-oci"}},
 				"nixpkgs":{` + gh("NixOS", "nixpkgs", b) + `},
 				"nixpkgs_2":{` + gh("NixOS", "nixpkgs", a) + `},
-				"nix-oci":{` + gh("systemstart", "nix-oci", b) + `}`,
-			want: []string{"github:NixOS/nixpkgs/" + a, "github:systemstart/nix-oci/" + b},
+				"nix-oci":{` + gh("nix-gizmos", "nix-oci", b) + `}`,
+			want: []string{"github:NixOS/nixpkgs/" + a, "github:nix-gizmos/nix-oci/" + b},
 		},
 		{
 			name: "the locked repository, a fork's included",
@@ -104,16 +104,16 @@ func TestLockedPins(t *testing.T) {
 		{
 			name: "an input that follows another resolves to that one",
 			nodes: `"root":{"inputs":{"nixpkgs":["nix-oci","nixpkgs"],"nix-oci":"nix-oci"}},
-				"nix-oci":{"inputs":{"nixpkgs":"nixpkgs"},` + gh("systemstart", "nix-oci", b) + `},
+				"nix-oci":{"inputs":{"nixpkgs":"nixpkgs"},` + gh("nix-gizmos", "nix-oci", b) + `},
 				"nixpkgs":{` + gh("NixOS", "nixpkgs", a) + `}`,
-			want: []string{"github:NixOS/nixpkgs/" + a, "github:systemstart/nix-oci/" + b},
+			want: []string{"github:NixOS/nixpkgs/" + a, "github:nix-gizmos/nix-oci/" + b},
 		},
 		{
 			name: "a follows path through another follows",
 			nodes: `"root":{"inputs":{"nixpkgs":["x","nixpkgs"],"x":["nix-oci"],"nix-oci":"nix-oci"}},
-				"nix-oci":{"inputs":{"nixpkgs":"nixpkgs"},` + gh("systemstart", "nix-oci", b) + `},
+				"nix-oci":{"inputs":{"nixpkgs":"nixpkgs"},` + gh("nix-gizmos", "nix-oci", b) + `},
 				"nixpkgs":{` + gh("NixOS", "nixpkgs", a) + `}`,
-			want: []string{"github:NixOS/nixpkgs/" + a, "github:systemstart/nix-oci/" + b},
+			want: []string{"github:NixOS/nixpkgs/" + a, "github:nix-gizmos/nix-oci/" + b},
 		},
 		{
 			name: "a long follows chain",
@@ -148,7 +148,7 @@ func TestLockedPins(t *testing.T) {
 		{
 			name: "no full revision",
 			nodes: `"root":{"inputs":{"nixpkgs":"nixpkgs","nix-oci":"nix-oci"}},
-				"nixpkgs":{` + gh("NixOS", "nixpkgs", a) + `},"nix-oci":{` + gh("systemstart", "nix-oci", "main") + `}`,
+				"nixpkgs":{` + gh("NixOS", "nixpkgs", a) + `},"nix-oci":{` + gh("nix-gizmos", "nix-oci", "main") + `}`,
 			err: `no full locked revision`,
 		},
 		{name: "no root node", nodes: `"x":{}`, err: `no root node`},

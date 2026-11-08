@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/systemstart/nix-compose/pkg/nixpins"
+	"github.com/nix-gizmos/nix-compose/pkg/nixpins"
 )
 
 func writeYAML(t *testing.T, dir, name, content string) string {

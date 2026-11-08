@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/systemstart/nix-compose/pkg/k8s"
+	"github.com/nix-gizmos/nix-compose/pkg/k8s"
 )
 
 // TestPolicyFlagParsers covers both render policy flags in one table: they
