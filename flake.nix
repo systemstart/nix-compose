@@ -14,7 +14,7 @@
     # that lines up with a nix-oci release -- the same way the consumer repos
     # pin it.
     nix-oci = {
-      url = "github:nix-gizmos/nix-oci/v0.6.0";
+      url = "github:nix-gizmos/nix-oci/v0.7.0";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     # The Go toolchain. go-overlay tracks go.dev directly -- every patch and
