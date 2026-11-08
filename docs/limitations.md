@@ -28,7 +28,8 @@ These apply to `nix-compose.yaml` projects
 ### `package:` versions are pinned by the nix-compose version, not the file
 
 `image: nginx:1.27` states which nginx you get. `package: nginx` does not — it
-resolves against the nixpkgs revision the binary carries (`pkg/nixpins`). Two
+resolves against the nixpkgs revision the binary carries (`pkg/nixpins`, read
+from the `flake.lock` embedded at build time). Two
 machines running different nix-compose versions therefore get different
 packages from a byte-identical document, and upgrading nix-compose rebuilds and
 re-imports every image a YAML project builds.
