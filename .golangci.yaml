@@ -33,6 +33,16 @@ linters:
         - G306 # file written with permissions > 0600 — output files need standard read perms
         - G703 # path traversal via taint analysis — paths are validated at API boundary
 
+  exclusions:
+    rules:
+      # errcheck (golangci-lint 2.15) flags a receive from a chan error whose
+      # value is dropped. `_ = <-ch` is how this code says the drop is meant:
+      # a process or goroutine that was just stopped. staticcheck's S1005 would
+      # call that assignment unnecessary; for this one form it is the point.
+      - linters: [staticcheck]
+        text: "S1005"
+        source: "_ = <-"
+
 formatters:
   enable:
     - gofumpt

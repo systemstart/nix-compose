@@ -76,7 +76,7 @@ func TestProxy_Bidirectional(t *testing.T) {
 	}
 
 	_ = a1.Close()
-	<-done
+	_ = <-done
 }
 
 func TestProxy_OneDirectionClose(t *testing.T) {
@@ -96,7 +96,7 @@ func TestProxy_OneDirectionClose(t *testing.T) {
 	}
 
 	_ = b2.Close()
-	<-done
+	_ = <-done
 }
 
 func TestProxy_LargeTransfer(t *testing.T) {
@@ -130,5 +130,5 @@ func TestProxy_LargeTransfer(t *testing.T) {
 	}
 
 	_ = b2.Close()
-	<-done
+	_ = <-done
 }

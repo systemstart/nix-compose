@@ -192,12 +192,12 @@ func (v *vm) Stop(ctx context.Context) error {
 
 		// Wait up to 10s for graceful exit.
 		select {
-		case <-v.waitCh:
-			// Process exited.
+		case _ = <-v.waitCh:
+			// Process exited; after SIGTERM a non-zero status is expected.
 		case <-time.After(10 * time.Second):
 			log.Printf("microvm: cloud-hypervisor did not exit after SIGTERM, sending SIGKILL")
 			_ = v.chvCmd.Process.Kill()
-			<-v.waitCh
+			_ = <-v.waitCh // killed: the exit status says so, nothing more.
 		}
 	}
 

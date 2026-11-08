@@ -305,7 +305,8 @@ func yamlEvalError(stderr string, code int, tmpDir string) error {
 	if strings.HasPrefix(nixErr.File, tmpDir) {
 		nixErr.File = ""
 	}
-	return nixErr
+	// Returned as is, not wrapped: callers look for *nixerror.NixEvalError.
+	return nixErr //nolint:wrapcheck // the typed error is the API
 }
 
 // NixpkgsRefFor returns the flake reference a document resolves `package:`
