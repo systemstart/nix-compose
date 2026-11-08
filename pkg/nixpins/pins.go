@@ -9,9 +9,10 @@
 // distro release does. `nixpkgs:` in the YAML overrides it per project.
 //
 // The pins are read from the flake.lock embedded in the binary (see the
-// nixcompose package at the repository root), so they are always the
-// revisions the build's flake.lock locks. They used to be a copy in this
-// file, which Renovate's lock-file maintenance moved past without updating.
+// nixcompose package at the repository root), so they are always what the
+// build's flake.lock locks: repository and revision both. They used to be a
+// copy in this file, which Renovate's lock-file maintenance moved past
+// without updating.
 package nixpins
 
 import (
@@ -23,76 +24,117 @@ import (
 )
 
 var (
-	// NixpkgsRev is the nixpkgs `package:` resolves against by default.
+	// NixpkgsRev is the nixpkgs revision `package:` resolves against by
+	// default.
 	NixpkgsRev string
 
-	// NixOCIRev supplies buildOCIImage, which turns a package's closure into
-	// an OCI image (ADR-006, ADR-015).
+	// NixOCIRev is the nix-oci revision that supplies buildOCIImage, which
+	// turns a package's closure into an OCI image (ADR-006, ADR-015).
 	NixOCIRev string
+
+	nixpkgs, nixOCI pin
 )
 
 func init() {
-	revs, err := lockedRevs(nixcompose.FlakeLock, "nixpkgs", "nix-oci")
+	pins, err := lockedPins(nixcompose.FlakeLock, "nixpkgs", "nix-oci")
 	if err != nil {
-		// The embedded lock is part of the build; a bad one is a broken build,
-		// which the package's tests catch before a release does.
+		// The embedded lock is part of the build: one this cannot read is a
+		// broken build, which the package's tests catch before a release.
 		panic("nixpins: embedded flake.lock: " + err.Error())
 	}
-	NixpkgsRev, NixOCIRev = revs[0], revs[1]
+	nixpkgs, nixOCI = pins[0], pins[1]
+	NixpkgsRev, NixOCIRev = nixpkgs.Rev, nixOCI.Rev
+}
+
+// pin is a locked GitHub flake input: repository and revision.
+type pin struct{ Owner, Repo, Rev string }
+
+// ref is the flake reference of exactly what the lock locked. Pinned to a full
+// revision rather than a branch so `builtins.getFlake` stays pure; built from
+// the locked repository too, so a fork's revision is looked up in the fork.
+func (p pin) ref() string { return "github:" + p.Owner + "/" + p.Repo + "/" + p.Rev }
+
+type lockNode struct {
+	Inputs map[string]json.RawMessage `json:"inputs"`
+	Locked struct {
+		Type  string `json:"type"`
+		Owner string `json:"owner"`
+		Repo  string `json:"repo"`
+		Rev   string `json:"rev"`
+	} `json:"locked"`
 }
 
 var fullRev = regexp.MustCompile(`^[0-9a-f]{40}$`)
 
-// lockedRevs returns the locked revision of each named input of the lock's
-// root flake. Inputs are looked up through the root node, not by node name:
-// nix renames nodes when names collide (nixpkgs_2), the root's inputs map
-// says which node is the flake's own.
-func lockedRevs(lock []byte, inputs ...string) ([]string, error) {
+// lockedPins returns what the lock locks for each named input of the root
+// flake. Inputs are resolved through the root node, not looked up by node
+// name (nix renames colliding nodes: nixpkgs_2), and an input that `follows`
+// another is resolved to the node it follows.
+func lockedPins(lock []byte, inputs ...string) ([]pin, error) {
 	var l struct {
-		Root  string `json:"root"`
-		Nodes map[string]struct {
-			Inputs map[string]json.RawMessage `json:"inputs"`
-			Locked struct {
-				Rev string `json:"rev"`
-			} `json:"locked"`
-		} `json:"nodes"`
+		Root  string              `json:"root"`
+		Nodes map[string]lockNode `json:"nodes"`
 	}
 	if err := json.Unmarshal(lock, &l); err != nil {
 		return nil, fmt.Errorf("parsing: %w", err)
 	}
-	root, ok := l.Nodes[l.Root]
-	if !ok {
+	if _, ok := l.Nodes[l.Root]; !ok {
 		return nil, fmt.Errorf("no root node %q", l.Root)
 	}
-	revs := make([]string, 0, len(inputs))
+	pins := make([]pin, 0, len(inputs))
 	for _, in := range inputs {
-		raw, ok := root.Inputs[in]
-		if !ok {
-			return nil, fmt.Errorf("the flake has no input %q", in)
+		name, err := resolve(l.Nodes, l.Root, []string{in}, 0)
+		if err != nil {
+			return nil, fmt.Errorf("input %q: %w", in, err)
 		}
-		var nodeName string
-		if err := json.Unmarshal(raw, &nodeName); err != nil {
-			// A list is a `follows`: the input is another input's, not locked
-			// for itself.
-			return nil, fmt.Errorf("input %q follows another input instead of being locked itself", in)
+		locked := l.Nodes[name].Locked
+		if locked.Type != "github" || locked.Owner == "" || locked.Repo == "" {
+			return nil, fmt.Errorf("input %q (node %q) is locked as %q, not a github owner/repo: its reference cannot be rebuilt from the lock", in, name, locked.Type)
 		}
-		rev := l.Nodes[nodeName].Locked.Rev
-		if !fullRev.MatchString(rev) {
-			return nil, fmt.Errorf("input %q (node %q) has no full locked revision: %q", in, nodeName, rev)
+		if !fullRev.MatchString(locked.Rev) {
+			return nil, fmt.Errorf("input %q (node %q) has no full locked revision: %q", in, name, locked.Rev)
 		}
-		revs = append(revs, rev)
+		pins = append(pins, pin{locked.Owner, locked.Repo, locked.Rev})
 	}
-	return revs, nil
+	return pins, nil
 }
 
-// NixpkgsRef returns the default nixpkgs flake reference. It is pinned to a
-// full revision rather than a branch so `builtins.getFlake` stays pure — an
-// unlocked ref would force --impure on every evaluation.
-func NixpkgsRef() string {
-	return "github:NixOS/nixpkgs/" + NixpkgsRev
+// resolve follows an input path from the root, as nix does: each step takes
+// the named input of the current node; an input that is itself a path
+// (`follows`) is resolved from the root again. depth bounds a cyclic lock.
+func resolve(nodes map[string]lockNode, root string, path []string, depth int) (string, error) {
+	if depth > 32 {
+		return "", fmt.Errorf("follows chain too deep (a cycle?)")
+	}
+	node := root
+	for _, step := range path {
+		raw, ok := nodes[node].Inputs[step]
+		if !ok {
+			return "", fmt.Errorf("node %q has no input %q", node, step)
+		}
+		var name string
+		if err := json.Unmarshal(raw, &name); err == nil {
+			node = name
+			continue
+		}
+		var follows []string
+		if err := json.Unmarshal(raw, &follows); err != nil {
+			return "", fmt.Errorf("node %q input %q is neither a node nor a follows path", node, step)
+		}
+		next, err := resolve(nodes, root, follows, depth+1)
+		if err != nil {
+			return "", err
+		}
+		node = next
+	}
+	if _, ok := nodes[node]; !ok {
+		return "", fmt.Errorf("no node %q", node)
+	}
+	return node, nil
 }
+
+// NixpkgsRef returns the default nixpkgs flake reference.
+func NixpkgsRef() string { return nixpkgs.ref() }
 
 // NixOCIRef returns the nix-oci flake reference.
-func NixOCIRef() string {
-	return "github:systemstart/nix-oci/" + NixOCIRev
-}
+func NixOCIRef() string { return nixOCI.ref() }
