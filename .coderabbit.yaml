@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+#
+# CodeRabbit for this repository (schema: the URL above). Reviews run only
+# when asked for: comment `@coderabbitai review` on a PR
+# (`@coderabbitai full review` reviews every file again).
+#
+# Over the plan's hourly review limit, no review runs: CodeRabbit comments on
+# the PR and reports a PASSING "Review rate limited" check, so that comment
+# is the only sign no review happened. `@coderabbitai rate limit` says when
+# capacity is back; ask again with `@coderabbitai review` then.
+reviews:
+  profile: chill
+  auto_review:
+    enabled: false
