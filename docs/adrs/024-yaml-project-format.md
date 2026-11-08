@@ -89,7 +89,7 @@ package's own `bin` directory. Without this, any package lacking
 
 **The nixpkgs version is not in the file.** `image: nginx:1.27` states
 the version; `package: nginx` does not. It resolves against the pin the
-binary carries (`pkg/nixpins`, checked against `flake.lock` by a test),
+binary carries (`pkg/nixpins`, read from the `flake.lock` embedded in it),
 so the nix-compose version determines package versions the way a distro
 release does. Two machines with different nix-compose versions get
 different results from a byte-identical document, and upgrading

@@ -4,46 +4,36 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
-// TestPinsMatchFlakeLock keeps the constants honest. They exist because an
-// installed binary has no flake.lock to read, but a copy that silently drifts
-// from the lock is worse than no copy: YAML projects would resolve packages
-// against a nixpkgs the rest of the repo stopped using.
-func TestPinsMatchFlakeLock(t *testing.T) {
+// TestPinsAreTheLocksRevisions: the pins are the revisions the repository's
+// flake.lock locks for the flake's own nixpkgs and nix-oci inputs, read here
+// independently of lockedRevs (with jq-like plain decoding of the file).
+func TestPinsAreTheLocksRevisions(t *testing.T) {
 	data, err := os.ReadFile(filepath.Join("..", "..", "flake.lock"))
 	if err != nil {
 		t.Fatalf("reading flake.lock: %v", err)
 	}
-
 	var lock struct {
-		Nodes map[string]struct {
-			Locked struct {
-				Rev string `json:"rev"`
-			} `json:"locked"`
-		} `json:"nodes"`
+		Root  string
+		Nodes map[string]map[string]json.RawMessage
 	}
 	if err := json.Unmarshal(data, &lock); err != nil {
 		t.Fatalf("parsing flake.lock: %v", err)
 	}
-
-	for _, tc := range []struct {
-		node string
-		want string
-	}{
-		{"nixpkgs", NixpkgsRev},
-		{"nix-oci", NixOCIRev},
-	} {
-		node, ok := lock.Nodes[tc.node]
-		if !ok {
-			t.Errorf("flake.lock has no %q node", tc.node)
-			continue
+	var rootInputs map[string]string
+	if err := json.Unmarshal(lock.Nodes[lock.Root]["inputs"], &rootInputs); err != nil {
+		t.Fatalf("root inputs: %v", err)
+	}
+	for input, got := range map[string]string{"nixpkgs": NixpkgsRev, "nix-oci": NixOCIRev} {
+		var locked struct{ Rev string }
+		if err := json.Unmarshal(lock.Nodes[rootInputs[input]]["locked"], &locked); err != nil {
+			t.Fatalf("%s locked: %v", input, err)
 		}
-		if node.Locked.Rev != tc.want {
-			t.Errorf("%s pin is stale: flake.lock has %s, nixpins has %s\n"+
-				"run `nix flake update` and update pkg/nixpins/pins.go to match",
-				tc.node, node.Locked.Rev, tc.want)
+		if got != locked.Rev || len(got) != 40 {
+			t.Errorf("%s pin is %q, flake.lock locks %q", input, got, locked.Rev)
 		}
 	}
 }
@@ -62,5 +52,60 @@ func TestRefsArePinnedToRevisions(t *testing.T) {
 				break
 			}
 		}
+	}
+}
+
+func TestLockedRevs(t *testing.T) {
+	const a, b = "0123456789abcdef0123456789abcdef01234567", "89abcdef0123456789abcdef0123456789abcdef"
+	lock := func(nodes string) []byte {
+		return []byte(`{"root":"root","version":7,"nodes":{` + nodes + `}}`)
+	}
+	for _, tc := range []struct {
+		name, nodes string
+		want        []string
+		err         string
+	}{
+		{
+			name: "through the root's inputs, not by node name",
+			nodes: `"root":{"inputs":{"nixpkgs":"nixpkgs_2","nix-oci":"nix-oci"}},
+				"nixpkgs":{"locked":{"rev":"` + b + `"}},
+				"nixpkgs_2":{"locked":{"rev":"` + a + `"}},
+				"nix-oci":{"locked":{"rev":"` + b + `"}}`,
+			want: []string{a, b},
+		},
+		{
+			name:  "missing input",
+			nodes: `"root":{"inputs":{"nixpkgs":"nixpkgs"}},"nixpkgs":{"locked":{"rev":"` + a + `"}}`,
+			err:   `no input "nix-oci"`,
+		},
+		{
+			name: "input that follows another",
+			nodes: `"root":{"inputs":{"nixpkgs":"nixpkgs","nix-oci":["x","nixpkgs"]}},
+				"nixpkgs":{"locked":{"rev":"` + a + `"}}`,
+			err: `"nix-oci" follows another input`,
+		},
+		{
+			name: "no full revision",
+			nodes: `"root":{"inputs":{"nixpkgs":"nixpkgs","nix-oci":"nix-oci"}},
+				"nixpkgs":{"locked":{"rev":"` + a + `"}},"nix-oci":{"locked":{"rev":"main"}}`,
+			err: `no full locked revision`,
+		},
+		{name: "no root node", nodes: `"x":{}`, err: `no root node`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := lockedRevs(lock(tc.nodes), "nixpkgs", "nix-oci")
+			if tc.err != "" {
+				if err == nil || !strings.Contains(err.Error(), tc.err) {
+					t.Fatalf("err = %v, want one containing %q", err, tc.err)
+				}
+				return
+			}
+			if err != nil || len(got) != 2 || got[0] != tc.want[0] || got[1] != tc.want[1] {
+				t.Fatalf("got %v, %v; want %v", got, err, tc.want)
+			}
+		})
+	}
+	if _, err := lockedRevs([]byte(`{`)); err == nil {
+		t.Error("malformed JSON: want an error")
 	}
 }
