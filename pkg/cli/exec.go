@@ -6,11 +6,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/nix-gizmos/nix-compose/pkg/composition"
+	"github.com/nix-gizmos/nix-compose/pkg/cri"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/client"
 	"github.com/spf13/cobra"
-	"github.com/systemstart/nix-compose/pkg/composition"
-	"github.com/systemstart/nix-compose/pkg/cri"
-	"github.com/systemstart/nix-compose/pkg/eval"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/client"
 )
 
 var execCmd = &cobra.Command{

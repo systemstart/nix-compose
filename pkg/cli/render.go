@@ -8,11 +8,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/nix-gizmos/nix-compose/pkg/composition"
+	"github.com/nix-gizmos/nix-compose/pkg/envfrom"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/k8s"
 	"github.com/spf13/cobra"
-	"github.com/systemstart/nix-compose/pkg/composition"
-	"github.com/systemstart/nix-compose/pkg/envfrom"
-	"github.com/systemstart/nix-compose/pkg/eval"
-	"github.com/systemstart/nix-compose/pkg/k8s"
 )
 
 var (

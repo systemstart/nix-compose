@@ -6,11 +6,11 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"github.com/nix-gizmos/nix-compose/pkg/cni"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/client"
+	"github.com/nix-gizmos/nix-compose/pkg/volumes"
 	"github.com/spf13/cobra"
-	"github.com/systemstart/nix-compose/pkg/cni"
-	"github.com/systemstart/nix-compose/pkg/orchestrate"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/client"
-	"github.com/systemstart/nix-compose/pkg/volumes"
 )
 
 var rollbackDryRun bool

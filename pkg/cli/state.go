@@ -7,11 +7,11 @@ import (
 	"os"
 	"text/tabwriter"
 
+	orchestratev1 "github.com/nix-gizmos/nix-compose/api/orchestrate/v1"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/client"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/deploy"
 	"github.com/spf13/cobra"
-	orchestratev1 "github.com/systemstart/nix-compose/api/orchestrate/v1"
-	"github.com/systemstart/nix-compose/pkg/orchestrate"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/client"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/deploy"
 )
 
 var stateCmd = &cobra.Command{

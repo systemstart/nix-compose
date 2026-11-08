@@ -9,11 +9,11 @@ import (
 	"sort"
 	"syscall"
 
+	orchestratev1 "github.com/nix-gizmos/nix-compose/api/orchestrate/v1"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/logs"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/client"
 	"github.com/spf13/cobra"
-	orchestratev1 "github.com/systemstart/nix-compose/api/orchestrate/v1"
-	"github.com/systemstart/nix-compose/pkg/eval"
-	"github.com/systemstart/nix-compose/pkg/logs"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/client"
 )
 
 var (

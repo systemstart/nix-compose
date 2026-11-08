@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
 )
 
 // MountRefusalError reports every bind mount a render refused, so one run

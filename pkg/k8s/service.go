@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
 )
 
 // convertK8sService converts a named service to a K8s Service manifest.

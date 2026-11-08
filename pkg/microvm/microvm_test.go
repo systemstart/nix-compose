@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/systemstart/nix-compose/internal/testsock"
+	"github.com/nix-gizmos/nix-compose/internal/testsock"
 
-	orchestratev1 "github.com/systemstart/nix-compose/api/orchestrate/v1"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/client"
+	orchestratev1 "github.com/nix-gizmos/nix-compose/api/orchestrate/v1"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/client"
 	"google.golang.org/grpc"
 )
 

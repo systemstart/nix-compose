@@ -210,13 +210,13 @@
       "locked": {
         "lastModified": 1788780141,
         "narHash": "sha256-OrHa1WYtN/EjwP8t7uTSe/mvOE57WeFLudoWo/Po5Lg=",
-        "owner": "systemstart",
+        "owner": "nix-gizmos",
         "repo": "nix-oci",
         "rev": "2df53c7ac4766b13e0e9b3263310834f4b94eaf1",
         "type": "github"
       },
       "original": {
-        "owner": "systemstart",
+        "owner": "nix-gizmos",
         "ref": "v0.6.0",
         "repo": "nix-oci",
         "type": "github"

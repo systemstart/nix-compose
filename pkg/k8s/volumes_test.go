@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
 )
 
 // testPlan plans a service's volumes under the empty-dir policy, which is the

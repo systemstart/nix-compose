@@ -51,8 +51,8 @@ buildGoModule {
 
       Run `nix-compose doctor` to check which of them are present.
     '';
-    homepage = "https://github.com/systemstart/nix-compose";
-    changelog = "https://github.com/systemstart/nix-compose/releases/tag/v${version}";
+    homepage = "https://github.com/nix-gizmos/nix-compose";
+    changelog = "https://github.com/nix-gizmos/nix-compose/releases/tag/v${version}";
     license = lib.licenses.gpl3Only;
     mainProgram = "nix-compose";
     platforms = lib.platforms.linux;

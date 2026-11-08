@@ -5,14 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/nix-gizmos/nix-compose/pkg/cni"
+	"github.com/nix-gizmos/nix-compose/pkg/cri"
+	"github.com/nix-gizmos/nix-compose/pkg/depgraph"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/gcroot"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/client"
+	"github.com/nix-gizmos/nix-compose/pkg/volumes"
 	"github.com/spf13/cobra"
-	"github.com/systemstart/nix-compose/pkg/cni"
-	"github.com/systemstart/nix-compose/pkg/cri"
-	"github.com/systemstart/nix-compose/pkg/depgraph"
-	"github.com/systemstart/nix-compose/pkg/eval"
-	"github.com/systemstart/nix-compose/pkg/gcroot"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/client"
-	"github.com/systemstart/nix-compose/pkg/volumes"
 )
 
 var (

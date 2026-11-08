@@ -16,9 +16,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/systemstart/nix-compose/pkg/cni"
-	"github.com/systemstart/nix-compose/pkg/cri"
-	"github.com/systemstart/nix-compose/pkg/logs"
+	"github.com/nix-gizmos/nix-compose/pkg/cni"
+	"github.com/nix-gizmos/nix-compose/pkg/cri"
+	"github.com/nix-gizmos/nix-compose/pkg/logs"
 )
 
 // Status is how a check came out.

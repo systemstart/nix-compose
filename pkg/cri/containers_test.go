@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/systemstart/nix-compose/internal/testsock"
+	"github.com/nix-gizmos/nix-compose/internal/testsock"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"

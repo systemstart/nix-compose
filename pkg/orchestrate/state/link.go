@@ -3,7 +3,7 @@ package state
 import (
 	"fmt"
 
-	"github.com/systemstart/nix-compose/pkg/orchestrate/typing"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/typing"
 )
 
 // Link represents a dependency edge between two resources.

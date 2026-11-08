@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
 )
 
 // Suggestion is one service's answer to "could this stop coming from a

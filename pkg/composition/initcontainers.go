@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
 )
 
 // initServiceName generates the compose service name for an init container.

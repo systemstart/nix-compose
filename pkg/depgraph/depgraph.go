@@ -3,7 +3,7 @@ package depgraph
 import (
 	"fmt"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
 )
 
 // Validate checks the service dependency graph for missing references and cycles.

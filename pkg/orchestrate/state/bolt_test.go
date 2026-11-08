@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/systemstart/nix-compose/pkg/orchestrate/typing"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/typing"
 )
 
 func tempDB(t *testing.T) *DB {

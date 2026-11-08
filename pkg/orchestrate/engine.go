@@ -6,15 +6,15 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/systemstart/nix-compose/pkg/cni"
-	"github.com/systemstart/nix-compose/pkg/cri"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/convert"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/deploy"
-	orchprovider "github.com/systemstart/nix-compose/pkg/orchestrate/provider"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/resources"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/state"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/typing"
-	"github.com/systemstart/nix-compose/pkg/volumes"
+	"github.com/nix-gizmos/nix-compose/pkg/cni"
+	"github.com/nix-gizmos/nix-compose/pkg/cri"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/convert"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/deploy"
+	orchprovider "github.com/nix-gizmos/nix-compose/pkg/orchestrate/provider"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/resources"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/state"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/typing"
+	"github.com/nix-gizmos/nix-compose/pkg/volumes"
 )
 
 // DefaultConditionTimeout is the default timeout for condition waits.

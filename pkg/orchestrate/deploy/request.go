@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/systemstart/nix-compose/pkg/orchestrate/state"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/typing"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/state"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/typing"
 )
 
 // RequestContext carries injected dependencies for request processing.

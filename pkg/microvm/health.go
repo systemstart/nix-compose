@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/systemstart/nix-compose/pkg/orchestrate/client"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/client"
 )
 
 const (

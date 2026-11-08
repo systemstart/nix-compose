@@ -4,7 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nix-compose = {
-      url = "github:systemstart/nix-compose";
+      url = "github:nix-gizmos/nix-compose";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

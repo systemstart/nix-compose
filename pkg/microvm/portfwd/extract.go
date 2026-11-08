@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
 )
 
 // ExtractPorts collects port mappings from a composition that should be

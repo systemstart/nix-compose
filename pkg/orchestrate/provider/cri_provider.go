@@ -3,13 +3,13 @@ package provider
 import (
 	"fmt"
 
-	"github.com/systemstart/nix-compose/pkg/cni"
-	"github.com/systemstart/nix-compose/pkg/cri"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/deploy"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/resources"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/state"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/typing"
-	"github.com/systemstart/nix-compose/pkg/volumes"
+	"github.com/nix-gizmos/nix-compose/pkg/cni"
+	"github.com/nix-gizmos/nix-compose/pkg/cri"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/deploy"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/resources"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/state"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/typing"
+	"github.com/nix-gizmos/nix-compose/pkg/volumes"
 )
 
 // CRIProvider implements deploy.Provider for CRI container resources.

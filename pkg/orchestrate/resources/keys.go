@@ -1,6 +1,6 @@
 package resources
 
-import "github.com/systemstart/nix-compose/pkg/orchestrate/typing"
+import "github.com/nix-gizmos/nix-compose/pkg/orchestrate/typing"
 
 const (
 	group   = "cri.orchestrator.io"

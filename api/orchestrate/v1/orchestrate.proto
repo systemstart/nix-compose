@@ -1,6 +1,6 @@
 syntax = "proto3";
 package orchestrate.v1;
-option go_package = "github.com/systemstart/nix-compose/api/orchestrate/v1;orchestratev1";
+option go_package = "github.com/nix-gizmos/nix-compose/api/orchestrate/v1;orchestratev1";
 
 import "google/protobuf/timestamp.proto";
 

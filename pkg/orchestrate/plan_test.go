@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/systemstart/nix-compose/pkg/orchestrate/convert"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/deploy"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/typing"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/convert"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/deploy"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/typing"
 )
 
 func makeCreateRequest(id string, key typing.DefinitionKey, body string) *deploy.CreateRequest {

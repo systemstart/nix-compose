@@ -27,7 +27,7 @@ one step short of working.
 ## Decision
 
 Builds stay out of the **orchestrator**, but they are no longer out of
-**scope**. They are delegated to [nix-oci](https://github.com/systemstart/nix-oci),
+**scope**. They are delegated to [nix-oci](https://github.com/nix-gizmos/nix-oci),
 which turns a Nix closure into a bit-reproducible OCI layout, and the result is
 imported directly into containerd ([ADR-015](015-virtiofs-image-delivery.md)).
 

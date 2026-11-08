@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/nix-gizmos/nix-compose/pkg/cri"
 	"github.com/spf13/cobra"
-	"github.com/systemstart/nix-compose/pkg/cri"
 )
 
 var topCmd = &cobra.Command{

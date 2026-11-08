@@ -3,7 +3,7 @@ package composition
 import (
 	"fmt"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
 )
 
 // LookupDefaultExec returns the command `nix-compose exec <service>` runs when

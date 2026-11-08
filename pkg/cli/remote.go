@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	orchestratev1 "github.com/systemstart/nix-compose/api/orchestrate/v1"
+	orchestratev1 "github.com/nix-gizmos/nix-compose/api/orchestrate/v1"
 )
 
 // printRemoteActions prints plan/apply actions from the remote server.

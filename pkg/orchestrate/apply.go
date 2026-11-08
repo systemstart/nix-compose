@@ -6,10 +6,10 @@ import (
 	"log"
 	"sort"
 
-	"github.com/systemstart/nix-compose/pkg/orchestrate/convert"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/deploy"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/state"
-	"github.com/systemstart/nix-compose/pkg/orchestrate/typing"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/convert"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/deploy"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/state"
+	"github.com/nix-gizmos/nix-compose/pkg/orchestrate/typing"
 )
 
 // ApplySync executes a plan synchronously in dependency order.

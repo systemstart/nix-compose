@@ -8,8 +8,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/nix-gizmos/nix-compose/pkg/cri"
 	"github.com/spf13/cobra"
-	"github.com/systemstart/nix-compose/pkg/cri"
 	runtimev1 "k8s.io/cri-api/pkg/apis/runtime/v1"
 )
 

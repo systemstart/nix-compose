@@ -3,7 +3,7 @@ package composition
 import (
 	"fmt"
 
-	"github.com/systemstart/nix-compose/pkg/eval"
+	"github.com/nix-gizmos/nix-compose/pkg/eval"
 )
 
 // FilterByProfiles returns a new Composition containing only the services
