@@ -19,14 +19,14 @@ permissions:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: DeterminateSystems/nix-installer-action@v23
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
         with:
           determinate: false
           diagnostic-endpoint: ''
-      - uses: cachix/cachix-action@v17
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
           name: systemstart
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
@@ -34,35 +34,35 @@ jobs:
       - run: nix develop --command make lint
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: DeterminateSystems/nix-installer-action@v23
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
         with:
           determinate: false
           diagnostic-endpoint: ''
-      - uses: cachix/cachix-action@v17
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
           name: systemstart
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           signingKey: ${{ secrets.CACHIX_SIGNING_KEY }}
       # `make test` enforces its own coverage threshold and writes coverage.out.
       - run: nix develop --command make test
-      - uses: codecov/codecov-action@v7
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           files: coverage.out
           token: ${{ secrets.CODECOV_TOKEN }}
         continue-on-error: true
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: DeterminateSystems/nix-installer-action@v23
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
         with:
           determinate: false
           diagnostic-endpoint: ''
-      - uses: cachix/cachix-action@v17
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
           name: systemstart
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
@@ -81,14 +81,14 @@ jobs:
   # minutes of runner time. Gating a binary release on them means an unrelated
   # cache miss or a full disk blocks a release that does not contain them.
   images:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: DeterminateSystems/nix-installer-action@v23
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
         with:
           determinate: false
           diagnostic-endpoint: ''
-      - uses: cachix/cachix-action@v17
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
           name: systemstart
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
@@ -103,16 +103,16 @@ jobs:
   # itself and aborts before publishing if it fails, so this is early warning,
   # not a gate.
   release-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0   # git-cliff needs the full history and the tags
-      - uses: DeterminateSystems/nix-installer-action@v23
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
         with:
           determinate: false
           diagnostic-endpoint: ''
-      - uses: cachix/cachix-action@v17
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
           name: systemstart
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
@@ -129,20 +129,20 @@ jobs:
   release:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [lint, test, build]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: write
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0   # goreleaser builds its changelog from history
-      - uses: DeterminateSystems/nix-installer-action@v23
+      - uses: DeterminateSystems/nix-installer-action@3138316df39ed29be04236d7ffc686fa525866aa # v23
         with:
           determinate: false
           diagnostic-endpoint: ''
-      - uses: cachix/cachix-action@v17
+      - uses: cachix/cachix-action@38b082610b782e7e93e209c35fd730d399dee866 # v17
         with:
           name: systemstart
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
