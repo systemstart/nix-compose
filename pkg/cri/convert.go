@@ -13,19 +13,21 @@ import (
 
 // ParseStopSignal converts a compose-style signal name (e.g. "SIGTERM", "SIGKILL",
 // "SIGUSR1") to a CRI Signal enum value. The match is case-insensitive and the "SIG"
-// prefix is optional. Returns RUNTIME_DEFAULT for empty or unrecognised strings.
+// prefix is optional. Returns SIGNAL_RUNTIME_DEFAULT for empty or unrecognised strings.
 func ParseStopSignal(s string) runtimev1.Signal {
 	if s == "" {
-		return runtimev1.Signal_RUNTIME_DEFAULT
+		return runtimev1.Signal_SIGNAL_RUNTIME_DEFAULT
 	}
 	upper := strings.ToUpper(s)
 	if !strings.HasPrefix(upper, "SIG") {
 		upper = "SIG" + upper
 	}
-	if v, ok := runtimev1.Signal_value[upper]; ok {
+	// cri-api v0.37 prefixed every enum name with SIGNAL_ (SIGNAL_SIGTERM);
+	// the numbers, and so the wire format, did not change.
+	if v, ok := runtimev1.Signal_value["SIGNAL_"+upper]; ok {
 		return runtimev1.Signal(v)
 	}
-	return runtimev1.Signal_RUNTIME_DEFAULT
+	return runtimev1.Signal_SIGNAL_RUNTIME_DEFAULT
 }
 
 // VolumeResolver maps a (project, volume-name) to a host directory path.
@@ -363,7 +365,7 @@ func BuildContainerConfig(service string, svc eval.Service, project, version str
 	}
 
 	// Stop signal.
-	if sig := ParseStopSignal(svc.StopSignal); sig != runtimev1.Signal_RUNTIME_DEFAULT {
+	if sig := ParseStopSignal(svc.StopSignal); sig != runtimev1.Signal_SIGNAL_RUNTIME_DEFAULT {
 		cfg.StopSignal = sig
 	}
 

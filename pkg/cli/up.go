@@ -275,7 +275,7 @@ func criForeground(ctx context.Context, deps UpDeps, comp *eval.Composition) err
 		}
 		// Wait for supervisor goroutines to finish.
 		select {
-		case <-supDone:
+		case _ = <-supDone: // Run ends because Stop ended it; its error is not news here.
 		case <-time.After(5 * time.Second):
 		}
 		return nil

@@ -1,7 +1,10 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    ":semanticCommits",
+    "helpers:pinGitHubActionDigests",
+    "helpers:pinGitHubActionDigestsToSemver"
   ],
   "schedule": [
     "before 9am on monday"
@@ -71,6 +74,18 @@
       ],
       "commitMessagePrefix": "chore(deps):",
       "commitMessageExtra": "({{{newVersion}}})"
+    },
+    {
+      "description": "These actions tag their releases vN only, with no vN.N.N. helpers:pinGitHubActionDigestsToSemver extracts vN.N.N tags only, so it would find no versions for them; take vN here.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchPackageNames": [
+        "cachix/cachix-action",
+        "DeterminateSystems/nix-installer-action",
+        "DeterminateSystems/magic-nix-cache-action"
+      ],
+      "extractVersion": "^(?<version>v\\d+)$"
     }
   ],
   "customManagers": [

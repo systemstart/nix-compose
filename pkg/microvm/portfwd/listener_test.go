@@ -88,7 +88,7 @@ func TestVMListener_BasicForward(t *testing.T) {
 	}
 
 	cancel()
-	<-serveDone
+	_ = <-serveDone
 }
 
 func TestVMListener_InvalidPort(t *testing.T) {
@@ -125,7 +125,7 @@ func TestVMListener_InvalidPort(t *testing.T) {
 	_ = conn.Close()
 
 	cancel()
-	<-serveDone
+	_ = <-serveDone
 }
 
 func TestVMListener_HeaderTimeout(t *testing.T) {
@@ -158,7 +158,7 @@ func TestVMListener_HeaderTimeout(t *testing.T) {
 	_ = conn.Close()
 
 	cancel()
-	<-serveDone
+	_ = <-serveDone
 }
 
 func TestVMListener_ContextCancel(t *testing.T) {
