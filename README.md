@@ -523,6 +523,12 @@ file is never read, so it need not exist on the machine that renders. See
 fields and [ADR-026](docs/adrs/026-bind-mounts-in-the-k8s-target.md) for why
 it references a Secret rather than generating one.
 
+**Configuration the cluster supplies** — a ConfigMap you maintain yourself,
+for a file or a whole directory — works the same way with
+`x-nix-compose.configMapMounts = [ { source = "./conf/kratos"; configMapName = "kratos-config"; } ];`:
+a `configMap` volume referencing it, no manifest, no content. See
+[docs/config-reference.md](docs/config-reference.md#configmapmounts).
+
 ### `exec` behaviour
 
 When no command is given, `exec` uses the `defaultExec` from the service's
@@ -643,7 +649,7 @@ x-nix-compose:
 ```
 
 Also available: `resources`, `probes`, `envFrom`, `initContainers`,
-`namedPorts`, `secretMounts`, `useHostStore`. Every field is documented in
+`namedPorts`, `secretMounts`, `configMapMounts`, `useHostStore`. Every field is documented in
 [docs/config-reference.md](docs/config-reference.md).
 
 ## Agent guide

@@ -46,6 +46,10 @@ type volumePlan struct {
 	// usedSecrets records which of them matched a volume.
 	secrets     map[string]eval.SecretMount
 	usedSecrets map[string]bool
+	// suppliedConfigMaps does the same for declared ConfigMap mounts, and
+	// usedConfigMaps records which of them matched a volume.
+	suppliedConfigMaps map[string]eval.ConfigMapMount
+	usedConfigMaps     map[string]bool
 }
 
 // planVolumes resolves every volume string of a service and its init
@@ -54,15 +58,59 @@ type volumePlan struct {
 // instead of one per run.
 func planVolumes(svcName string, svc eval.Service, compVolumes map[string]eval.Volume, opts RenderOptions) *volumePlan {
 	p := &volumePlan{
-		mounts:  make(map[string]VolumeMount),
-		names:   make(map[string]string),
-		secrets: secretMountsBySource(svc),
+		mounts:             make(map[string]VolumeMount),
+		names:              make(map[string]string),
+		secrets:            secretMountsBySource(svc),
+		suppliedConfigMaps: configMapMountsBySource(svc),
 	}
+	p.reportDoublyDeclaredMounts(svcName)
 	for _, vol := range serviceVolumeStrings(svc) {
 		p.add(svcName, vol, compVolumes, opts)
 	}
 	p.reportUnmatchedSecretMounts(svcName)
+	p.reportUnmatchedConfigMapMounts(svcName)
 	return p
+}
+
+// configMapMountsBySource indexes a service's declared ConfigMap mounts by
+// the volume source they name.
+func configMapMountsBySource(svc eval.Service) map[string]eval.ConfigMapMount {
+	if svc.XNixCompose == nil || len(svc.XNixCompose.ConfigMapMounts) == 0 {
+		return nil
+	}
+	bySource := make(map[string]eval.ConfigMapMount, len(svc.XNixCompose.ConfigMapMounts))
+	for _, cm := range svc.XNixCompose.ConfigMapMounts {
+		bySource[cm.Source] = cm
+	}
+	return bySource
+}
+
+// reportDoublyDeclaredMounts refuses a source named by both secretMounts and
+// configMapMounts: which one the cluster supplies is not for the renderer to
+// pick.
+func (p *volumePlan) reportDoublyDeclaredMounts(svcName string) {
+	for source := range p.suppliedConfigMaps {
+		if _, both := p.secrets[source]; both {
+			p.refuse(fmt.Errorf("service %q: source %q is in both x-nix-compose.secretMounts and "+
+				"x-nix-compose.configMapMounts; keep the one the cluster actually supplies", svcName, source), "")
+		}
+	}
+}
+
+// reportUnmatchedConfigMapMounts refuses a declared ConfigMap mount whose
+// source is not one of the service's volumes, for the same reason as
+// reportUnmatchedSecretMounts.
+func (p *volumePlan) reportUnmatchedConfigMapMounts(svcName string) {
+	for source, cm := range p.suppliedConfigMaps {
+		// A source also in secretMounts is refused for that already; one
+		// refusal names the mistake, a second would misstate it.
+		if _, secret := p.secrets[source]; p.usedConfigMaps[source] || secret {
+			continue
+		}
+		p.refuse(fmt.Errorf("service %q: x-nix-compose.configMapMounts names source %q, which is not one of its "+
+			"volumes — the mount it was meant to cover would render as content, or be refused; fix the path or "+
+			"drop the entry", svcName, cm.Source), "")
+	}
 }
 
 // secretMountsBySource indexes a service's declared secret mounts by the
@@ -117,6 +165,10 @@ func (p *volumePlan) add(svcName, vol string, compVolumes map[string]eval.Volume
 		p.addSecretMount(vol, source, dest, sm)
 		return
 	}
+	if cm, declared := p.suppliedConfigMaps[source]; declared {
+		p.addConfigMapMount(svcName, vol, source, dest, cm)
+		return
+	}
 	if !isBindMount(source) {
 		p.addNamedVolume(vol, source, dest, readOnly, compVolumes)
 		return
@@ -162,6 +214,36 @@ func (p *volumePlan) addSecretMount(vol, source, dest string, sm eval.SecretMoun
 	p.addPodVolume(PodVolume{Name: name, Secret: &SecretVolumeSource{SecretName: sm.SecretName}})
 	// A Secret volume is read-only in the same way a ConfigMap one is.
 	p.mounts[vol] = VolumeMount{Name: name, MountPath: dest, SubPath: key, ReadOnly: true}
+}
+
+// addConfigMapMount plans a mount the cluster supplies from an existing
+// ConfigMap. As with addSecretMount the source is never read, so it may be a
+// directory, or absent where the render runs. Without a key the ConfigMap is
+// mounted whole, as a directory; with one, that key is mounted as a file.
+func (p *volumePlan) addConfigMapMount(svcName, vol, source, dest string, cm eval.ConfigMapMount) {
+	if p.usedConfigMaps == nil {
+		p.usedConfigMaps = make(map[string]bool)
+	}
+	p.usedConfigMaps[source] = true
+
+	// A named volume is data the service owns, rendered as a PVC or an empty
+	// directory it can write; swapping it for a read-only ConfigMap would
+	// take that away without a word.
+	if !isBindMount(source) {
+		p.refuse(fmt.Errorf("service %q: x-nix-compose.configMapMounts names %q, a named volume; it covers "+
+			"bind mounts only — drop the entry, or bind-mount the configuration instead", svcName, source), "")
+		return
+	}
+	if cm.ConfigMapName == "" {
+		p.refuse(fmt.Errorf("service %q: x-nix-compose.configMapMounts entry for %q has no configMapName",
+			svcName, source), "")
+		return
+	}
+	name := p.claimName(sanitizeName(cm.ConfigMapName), source)
+
+	p.addPodVolume(PodVolume{Name: name, ConfigMap: &ConfigMapVolumeSource{Name: cm.ConfigMapName}})
+	// A ConfigMap volume is read-only whatever the compose file asked for.
+	p.mounts[vol] = VolumeMount{Name: name, MountPath: dest, SubPath: cm.Key, ReadOnly: true}
 }
 
 // addConfigMap plans a bind-mounted file as a generated ConfigMap mounted
@@ -317,7 +399,8 @@ func readBindSource(source, projectDir string) (content, filename string, err er
 	}
 	if info.IsDir() {
 		return "", "", fmt.Errorf("host path %s is a directory, which the k8s target cannot represent; "+
-			"mount the files individually, or declare a named volume and populate it", source)
+			"declare it in x-nix-compose.configMapMounts if the cluster supplies it as a ConfigMap, mount the files "+
+			"individually, or declare a named volume and populate it", source)
 	}
 	if !info.Mode().IsRegular() {
 		return "", "", fmt.Errorf("host path %s is a %s, not a regular file, so it has no content to carry into the cluster",
