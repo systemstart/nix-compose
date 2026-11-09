@@ -326,6 +326,8 @@ started with until the pod restarts.
 The render fails, naming the entry, when:
 
 - its `source` matches none of the service's volumes;
+- its `source` is a named volume rather than a bind mount: the PVC holds the
+  service's data, and a read-only ConfigMap in its place would lose it;
 - it has no `configMapName`;
 - the same `source` is also in `secretMounts`;
 - another volume, in any service, would generate a ConfigMap with the same

@@ -102,7 +102,9 @@ func (p *volumePlan) reportDoublyDeclaredMounts(svcName string) {
 // reportUnmatchedSecretMounts.
 func (p *volumePlan) reportUnmatchedConfigMapMounts(svcName string) {
 	for source, cm := range p.suppliedConfigMaps {
-		if p.usedConfigMaps[source] {
+		// A source also in secretMounts is refused for that already; one
+		// refusal names the mistake, a second would misstate it.
+		if _, secret := p.secrets[source]; p.usedConfigMaps[source] || secret {
 			continue
 		}
 		p.refuse(fmt.Errorf("service %q: x-nix-compose.configMapMounts names source %q, which is not one of its "+
@@ -224,6 +226,14 @@ func (p *volumePlan) addConfigMapMount(svcName, vol, source, dest string, cm eva
 	}
 	p.usedConfigMaps[source] = true
 
+	// A named volume is data the service owns, rendered as a PVC or an empty
+	// directory it can write; swapping it for a read-only ConfigMap would
+	// take that away without a word.
+	if !isBindMount(source) {
+		p.refuse(fmt.Errorf("service %q: x-nix-compose.configMapMounts names %q, a named volume; it covers "+
+			"bind mounts only — drop the entry, or bind-mount the configuration instead", svcName, source), "")
+		return
+	}
 	if cm.ConfigMapName == "" {
 		p.refuse(fmt.Errorf("service %q: x-nix-compose.configMapMounts entry for %q has no configMapName",
 			svcName, source), "")

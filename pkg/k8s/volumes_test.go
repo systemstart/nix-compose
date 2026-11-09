@@ -692,3 +692,35 @@ func TestConvert_GeneratedConfigMapMayNotShadowASuppliedOne(t *testing.T) {
 	_, err = Convert(comp, nil, RenderOptions{Namespace: "demo", ProjectDir: dir})
 	requireMustFix(t, err, generated.Metadata.Name)
 }
+
+func TestConvert_MountInBothListsIsRefusedOnce(t *testing.T) {
+	dir, svc := configMapMountProject(t)
+	svc.XNixCompose.SecretMounts = []eval.SecretMount{{Source: "./files/kratos", SecretName: "kratos"}}
+	comp := &eval.Composition{Services: map[string]eval.Service{"kratos": svc}}
+
+	_, err := Convert(comp, nil, RenderOptions{Namespace: "demo", ProjectDir: dir})
+	var refused *MountRefusalError
+	if !errors.As(err, &refused) {
+		t.Fatalf("error is %v, want *MountRefusalError", err)
+	}
+	if len(refused.Refusals) != 1 {
+		t.Errorf("want only the both-lists refusal, got %d: %v", len(refused.Refusals), refused.Refusals)
+	}
+}
+
+func TestConvert_ConfigMapMountOverANamedVolumeIsRefused(t *testing.T) {
+	svc := eval.Service{
+		Image:   "app",
+		Volumes: []string{"appdata:/var/lib/app"},
+		XNixCompose: &eval.NixComposeExtended{
+			ConfigMapMounts: []eval.ConfigMapMount{{Source: "appdata", ConfigMapName: "app-config"}},
+		},
+	}
+	comp := &eval.Composition{
+		Services: map[string]eval.Service{"app": svc},
+		Volumes:  map[string]eval.Volume{"appdata": {}},
+	}
+
+	_, err := Convert(comp, nil, RenderOptions{Namespace: "demo", ProjectDir: t.TempDir()})
+	requireMustFix(t, err, "a named volume")
+}
