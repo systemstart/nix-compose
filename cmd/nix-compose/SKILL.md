@@ -63,7 +63,10 @@ render and names the service and the volume, rather than emitting an empty
 directory the container would start without. A file holding a PEM private key
 fails too: a ConfigMap is not a Secret. `--secret-material=configmap` renders
 it anyway; `x-nix-compose.secretMounts` renders it as a reference to a Secret
-the cluster supplies, emitting no content at all.
+the cluster supplies, emitting no content at all. For a directory (or file)
+of configuration the cluster supplies as a ConfigMap,
+`x-nix-compose.configMapMounts` (`source`, `configMapName`, optional `key`)
+does the same with a reference to that ConfigMap, per mount.
 
 `render` honours `--profile` exactly as `up` does: a service that declares
 `profiles` is rendered only when one of them is active, so services excluded

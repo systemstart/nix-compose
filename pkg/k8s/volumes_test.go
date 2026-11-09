@@ -543,3 +543,152 @@ func TestConvert_SecretMountMatchingNoVolumeIsRefused(t *testing.T) {
 		t.Errorf("error %q does not name the entry that matched nothing", err)
 	}
 }
+
+// configMapMountProject is the shape of the request that prompted
+// configMapMounts: a directory of configuration bind-mounted for `up`, which
+// the cluster supplies from a ConfigMap maintained by hand.
+func configMapMountProject(t *testing.T) (dir string, svc eval.Service) {
+	t.Helper()
+	dir = t.TempDir()
+	conf := filepath.Join(dir, "files", "kratos")
+	if err := os.MkdirAll(conf, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(conf, "kratos.yml"), []byte("dsn: local-only-sentinel\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return dir, eval.Service{
+		Image:   "kratos",
+		Volumes: []string{"./files/kratos:/etc/kratos:ro"},
+		XNixCompose: &eval.NixComposeExtended{
+			ConfigMapMounts: []eval.ConfigMapMount{{Source: "./files/kratos", ConfigMapName: "kratos-config"}},
+		},
+	}
+}
+
+// requireMustFix asserts that Convert refused with a refusal no flag can
+// override, and that the message names want.
+func requireMustFix(t *testing.T, err error, want string) {
+	t.Helper()
+	if err == nil {
+		t.Fatal("rendered; want a refusal")
+	}
+	var refused *MountRefusalError
+	if !errors.As(err, &refused) {
+		t.Fatalf("error is %T, want *MountRefusalError", err)
+	}
+	if !refused.MustFix {
+		t.Error("MustFix is false, so the CLI would offer flags that cannot render this")
+	}
+	if !strings.Contains(err.Error(), want) {
+		t.Errorf("error %q does not mention %q", err, want)
+	}
+}
+
+func TestConvert_ConfigMapMountReferencesADirectoryWithoutEmittingContent(t *testing.T) {
+	dir, svc := configMapMountProject(t)
+	comp := &eval.Composition{Services: map[string]eval.Service{"kratos": svc}}
+
+	result, err := Convert(comp, nil, RenderOptions{Namespace: "demo", ProjectDir: dir})
+	if err != nil {
+		t.Fatalf("Convert: %v (a declared directory mount must not be refused)", err)
+	}
+
+	var buf bytes.Buffer
+	if err := WriteMultiDoc(&buf, result.Manifests); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(buf.String(), "local-only-sentinel") {
+		t.Error("rendered output carries the source's content; a ConfigMap mount must only reference")
+	}
+	for _, m := range result.Manifests {
+		if _, isCM := m.Object.(ConfigMap); isCM {
+			t.Error("a ConfigMap mount emitted a ConfigMap; it must reference the one the cluster has")
+		}
+	}
+
+	d, _ := findManifest[Deployment](result.Manifests)
+	podVols := d.Spec.Template.Spec.Volumes
+	if len(podVols) != 1 || podVols[0].ConfigMap == nil || podVols[0].ConfigMap.Name != "kratos-config" {
+		t.Fatalf("expected one configMap pod volume referencing kratos-config, got %+v", podVols)
+	}
+	mounts := d.Spec.Template.Spec.Containers[0].VolumeMounts
+	// No subPath: the ConfigMap is mounted as a directory.
+	want := VolumeMount{Name: "kratos-config", MountPath: "/etc/kratos", ReadOnly: true}
+	if len(mounts) != 1 || mounts[0] != want {
+		t.Errorf("volume mount = %+v, want %+v", mounts, want)
+	}
+}
+
+func TestConvert_ConfigMapMountKeyMountsOneFile(t *testing.T) {
+	svc := eval.Service{
+		Image:   "app",
+		Volumes: []string{"./conf/app.yml:/etc/app.yml"},
+		XNixCompose: &eval.NixComposeExtended{
+			ConfigMapMounts: []eval.ConfigMapMount{{Source: "./conf/app.yml", ConfigMapName: "app-config", Key: "app.yml"}},
+		},
+	}
+	comp := &eval.Composition{Services: map[string]eval.Service{"app": svc}}
+
+	// The file does not exist here: it is never read.
+	result, err := Convert(comp, nil, RenderOptions{Namespace: "demo", ProjectDir: t.TempDir()})
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	d, _ := findManifest[Deployment](result.Manifests)
+	want := VolumeMount{Name: "app-config", MountPath: "/etc/app.yml", SubPath: "app.yml", ReadOnly: true}
+	if got := d.Spec.Template.Spec.Containers[0].VolumeMounts; len(got) != 1 || got[0] != want {
+		t.Errorf("volume mount = %+v, want %+v", got, want)
+	}
+}
+
+func TestConvert_ConfigMapMountMatchingNoVolumeIsRefused(t *testing.T) {
+	dir, svc := configMapMountProject(t)
+	svc.XNixCompose.ConfigMapMounts[0].Source = "./files/kartos" // typo
+	comp := &eval.Composition{Services: map[string]eval.Service{"kratos": svc}}
+
+	_, err := Convert(comp, nil, RenderOptions{Namespace: "demo", ProjectDir: dir})
+	requireMustFix(t, err, "./files/kartos")
+}
+
+func TestConvert_ConfigMapMountWithoutNameIsRefused(t *testing.T) {
+	dir, svc := configMapMountProject(t)
+	svc.XNixCompose.ConfigMapMounts[0].ConfigMapName = ""
+	comp := &eval.Composition{Services: map[string]eval.Service{"kratos": svc}}
+
+	_, err := Convert(comp, nil, RenderOptions{Namespace: "demo", ProjectDir: dir})
+	requireMustFix(t, err, "no configMapName")
+}
+
+func TestConvert_MountInSecretAndConfigMapMountsIsRefused(t *testing.T) {
+	dir, svc := configMapMountProject(t)
+	svc.XNixCompose.SecretMounts = []eval.SecretMount{{Source: "./files/kratos", SecretName: "kratos"}}
+	comp := &eval.Composition{Services: map[string]eval.Service{"kratos": svc}}
+
+	_, err := Convert(comp, nil, RenderOptions{Namespace: "demo", ProjectDir: dir})
+	requireMustFix(t, err, "in both")
+}
+
+func TestConvert_GeneratedConfigMapMayNotShadowASuppliedOne(t *testing.T) {
+	dir, comp := bindMountProject(t)
+	// Learn the generated name, then have another service reference it as a
+	// ConfigMap the cluster supplies.
+	first, err := Convert(comp, nil, RenderOptions{Namespace: "demo", ProjectDir: dir})
+	if err != nil {
+		t.Fatalf("Convert: %v", err)
+	}
+	generated, ok := findManifest[ConfigMap](first.Manifests)
+	if !ok {
+		t.Fatal("bindMountProject generated no ConfigMap")
+	}
+	comp.Services["other"] = eval.Service{
+		Image:   "other",
+		Volumes: []string{"./elsewhere:/etc/other:ro"},
+		XNixCompose: &eval.NixComposeExtended{
+			ConfigMapMounts: []eval.ConfigMapMount{{Source: "./elsewhere", ConfigMapName: generated.Metadata.Name}},
+		},
+	}
+
+	_, err = Convert(comp, nil, RenderOptions{Namespace: "demo", ProjectDir: dir})
+	requireMustFix(t, err, generated.Metadata.Name)
+}

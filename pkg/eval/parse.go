@@ -143,6 +143,9 @@ type NixComposeExtended struct {
 	InitContainers []InitContainer `json:"initContainers,omitempty"`
 	NamedPorts     []NamedPort     `json:"namedPorts,omitempty"`
 	SecretMounts   []SecretMount   `json:"secretMounts,omitempty"`
+	// ConfigMapMounts is SecretMounts' counterpart for configuration the
+	// cluster supplies as a ConfigMap.
+	ConfigMapMounts []ConfigMapMount `json:"configMapMounts,omitempty"`
 	// ImageDrv is the derivation that produces this service's image, set by
 	// mkComposition when the service names a package instead of a registry
 	// tag. Evaluation yields the image's store path without building it, so
@@ -167,6 +170,27 @@ type SecretMount struct {
 	SecretName string `json:"secretName"`
 	// Key is the Secret key to project, mounted with subPath. Defaults to
 	// the source's base name.
+	Key string `json:"key,omitempty"`
+}
+
+// ConfigMapMount marks one of a service's bind mounts as configuration the
+// cluster supplies from a ConfigMap it already has — one maintained by hand,
+// or by an overlay, rather than copied out of the project.
+//
+// `render --target k8s` emits a reference to that ConfigMap — no ConfigMap
+// manifest, and none of the source's bytes. Unlike a generated ConfigMap it
+// can stand in for a directory: without Key, the whole ConfigMap is mounted
+// at the destination, one file per key. Locally `up` still bind-mounts the
+// real path.
+type ConfigMapMount struct {
+	// Source is the volume's host path, matched against the service's own
+	// volume strings exactly as written.
+	Source string `json:"source"`
+	// ConfigMapName is the ConfigMap in the target namespace to mount from.
+	// It is not created here.
+	ConfigMapName string `json:"configMapName"`
+	// Key, when set, projects that one key as a file, mounted with subPath.
+	// Unset, the ConfigMap is mounted as a directory.
 	Key string `json:"key,omitempty"`
 }
 

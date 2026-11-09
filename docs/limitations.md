@@ -226,8 +226,10 @@ it been accepted.
 
 **Workaround:** `--unrepresentable-mounts=empty-dir` restores the old
 behaviour with a warning per affected mount, for a project migrating off it.
-For a directory of configuration, write the ConfigMap by hand and patch the
-Deployment in an overlay; for a data directory, declare a named volume.
+For a directory of configuration the cluster supplies as a ConfigMap, declare
+the mount in `x-nix-compose.configMapMounts`, which renders a reference to it
+and leaves `up` unchanged; for a data directory, declare a named volume.
+Unlike the global flag, both apply to one mount only.
 
 ### A generated ConfigMap is not a Secret
 

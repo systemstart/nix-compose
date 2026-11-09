@@ -93,10 +93,44 @@ func planCompositionVolumes(comp *eval.Composition, opts RenderOptions) (map[str
 		overrides = mergeOverrides(overrides, plan.overrides)
 		mustFix = mustFix || plan.mustFix
 	}
+	if shadowed := shadowedConfigMaps(comp, plans); len(shadowed) > 0 {
+		refusals = append(refusals, shadowed...)
+		mustFix = true
+	}
 	if len(refusals) > 0 {
 		return nil, nil, &MountRefusalError{Refusals: refusals, Overrides: overrides, MustFix: mustFix}
 	}
 	return plans, warnings, nil
+}
+
+// shadowedConfigMaps refuses a generated ConfigMap that has the name of one
+// a configMapMounts entry says the cluster supplies, in any service: applying
+// the rendered output would replace the maintained ConfigMap with a copy of
+// a project file.
+func shadowedConfigMaps(comp *eval.Composition, plans map[string]*volumePlan) []error {
+	supplied := make(map[string]string) // ConfigMap name -> service referencing it
+	names := sortedServiceNames(comp)
+	for _, name := range names {
+		for source, cm := range plans[name].suppliedConfigMaps {
+			if plans[name].usedConfigMaps[source] && cm.ConfigMapName != "" {
+				if _, seen := supplied[cm.ConfigMapName]; !seen {
+					supplied[cm.ConfigMapName] = name
+				}
+			}
+		}
+	}
+	var refusals []error
+	for _, name := range names {
+		for _, generated := range plans[name].configMaps {
+			if ref, clash := supplied[generated.Metadata.Name]; clash {
+				refusals = append(refusals, fmt.Errorf("service %q: generates ConfigMap %q, which service %q "+
+					"references through x-nix-compose.configMapMounts as one the cluster supplies — applying the "+
+					"output would replace it; declare that mount in configMapMounts too, or rename one of them",
+					name, generated.Metadata.Name, ref))
+			}
+		}
+	}
+	return refusals
 }
 
 // mergeOverrides appends the overrides not already present, keeping the

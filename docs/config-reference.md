@@ -279,6 +279,58 @@ Locally nothing changes: `up` mounts the file the way the volume string says.
 An entry whose `source` matches no volume fails the render. Ignoring it would
 fail open — the mount it was meant to cover would render as content instead.
 
+### `configMapMounts`
+
+The ConfigMap counterpart of `secretMounts`: marks bind mounts whose content
+the **cluster** supplies from a `ConfigMap` it already has, maintained by hand
+or by an overlay. `render --target k8s` emits a reference to it instead of
+generating one, which also covers a **directory** of configuration, which the
+generated ConfigMaps cannot represent.
+
+```nix
+services.kratos = {
+  volumes = [ "./container/files/auth/kratos:/etc/kratos:ro" ];
+  x-nix-compose.configMapMounts = [
+    { source = "./container/files/auth/kratos"; configMapName = "kratos-config"; }
+  ];
+};
+```
+
+renders to a reference and nothing else:
+
+```yaml
+volumeMounts:
+  - name: kratos-config
+    mountPath: /etc/kratos
+    readOnly: true
+volumes:
+  - name: kratos-config
+    configMap:
+      name: kratos-config
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `source` | string | Host path, matched against the service's volume strings exactly as written |
+| `configMapName` | string | `ConfigMap` in the target namespace to mount from |
+| `key` | string | Optional. Mount only this key, as a file, with `subPath`. Unset, the whole ConfigMap is mounted as a directory, one file per key |
+
+**No `ConfigMap` manifest is emitted and the source is never read**, so it may
+be a directory, and need not exist on the machine doing the rendering. Locally
+nothing changes: `up` bind-mounts the real path.
+
+Kubernetes updates a ConfigMap mounted as a directory in a running pod when
+the ConfigMap changes; a `subPath` mount (with `key`) keeps the content it
+started with until the pod restarts.
+
+The render fails, naming the entry, when:
+
+- its `source` matches none of the service's volumes;
+- it has no `configMapName`;
+- the same `source` is also in `secretMounts`;
+- another volume, in any service, would generate a ConfigMap with the same
+  name: applying the output would replace the one the cluster supplies.
+
 ### `initContainers`
 
 Containers that run to completion before the main service starts.

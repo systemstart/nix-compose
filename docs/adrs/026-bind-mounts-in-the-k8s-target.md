@@ -128,6 +128,26 @@ Because the file is not read, the source need not exist where the render
 runs. An entry matching no volume is refused rather than ignored: silently
 ignoring it fails open, rendering as content the mount it was meant to cover.
 
+### Supplied configuration is referenced too
+
+`x-nix-compose.configMapMounts` is the same shape for a ConfigMap the cluster
+already has: it renders `volumes[].configMap.name`, with `subPath` only when
+a `key` is given, and emits no ConfigMap. It was requested for configuration
+directories that are bind-mounted for `up` but come from hand-maintained
+ConfigMaps (templates with per-environment branches) in the cluster.
+
+The alternatives each fail that case. `--unrepresentable-mounts=empty-dir`
+is global, so it also silences every future unrepresentable mount, and an
+empty directory hides whatever the image ships at that path. Mounting the
+files one by one generates a second copy of configuration that is already
+maintained elsewhere. A reference is per mount and copies nothing.
+
+It carries the same validation as `secretMounts` (an entry matching no volume
+is refused), and two more. A source in both lists is refused rather than
+resolved by precedence. A generated ConfigMap that has the name of a
+referenced one is refused, since applying the output would overwrite the
+maintained ConfigMap with a project file.
+
 Generating a Secret remains possible as a later opt-in, and would have to be
 documented as writing the material into the manifest.
 
