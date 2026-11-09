@@ -25,11 +25,19 @@ is_zero() { case "$1" in *[!0]*) return 1 ;; *) return 0 ;; esac; }
 while read -r _local_ref local_sha _remote_ref remote_sha; do
   is_zero "$local_sha" && continue          # branch deletion
 
-  if is_zero "$remote_sha"; then
-    # New branch: only commits not already published anywhere.
+  if is_zero "$remote_sha" || ! git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+    # New branch, or the server's tip is not in this clone (someone
+    # pushed since the last fetch — the push will be rejected, but the
+    # range below would print "fatal: Invalid revision range" first):
+    # check the commits not already published on any remote-tracking ref.
     mapfile -t commits < <(git rev-list "$local_sha" --not --remotes)
   else
-    mapfile -t commits < <(git rev-list "$remote_sha".."$local_sha")
+    # Also skip what any remote-tracking ref has: a force push of a branch
+    # rebased onto a moved main carries main's new commits in
+    # remote..local, and those are on the server already — GitHub's own
+    # merge commits among them, signed with a key no clone has (2026-11-08,
+    # a merge commit refused as unsigned: "E").
+    mapfile -t commits < <(git rev-list "$local_sha" --not "$remote_sha" --remotes)
   fi
 
   for c in ${commits+"${commits[@]}"}; do
