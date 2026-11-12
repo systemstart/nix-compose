@@ -108,6 +108,11 @@ corrupts it and fails at init with a slice-bounds panic.
 
 ## Pull requests
 
+What applies to every nix-gizmos repository is in the
+[organization's contributing guide](https://github.com/nix-gizmos/.github/blob/main/CONTRIBUTING.md):
+Conventional Commits, **signed commits** (and how to re-sign a pushed branch),
+review and merging. In addition, here:
+
 - Keep the change and its test in the same commit.
 - New behaviour needs a test; a bug fix needs a test that fails without it.
 - If you change what a user sees, update the docs in the same PR —
